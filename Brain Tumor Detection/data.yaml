@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['label0', 'label1', 'label2']
+
+roboflow:
+  workspace: yousef-ghanem-jzj4y
+  project: brain-tumor-detection-fpf1f
+  version: 2
+  license: Public Domain
+  url: https://universe.roboflow.com/yousef-ghanem-jzj4y/brain-tumor-detection-fpf1f/dataset/2

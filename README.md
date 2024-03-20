@@ -38,7 +38,7 @@
   <h3 align="center">Strykers Team</h3>
 
   <p align="center">
-    Welcome to the Strykers Team!
+    Welcome to the Strykers Team! This is the Brain Tumour Detection project!
     <br />
     <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a>
     <br />

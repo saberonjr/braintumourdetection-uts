@@ -18,7 +18,7 @@ def save_numpy_arrays(data, labels, data_filename, labels_filename):
     np.save(labels_filename, labels)
 
 
-def upload_cifar10_as_numpy(dataset_project, dataset_name):
+def upload_brain_tumour_dataset_as_numpy(dataset_project, dataset_name):
     import argparse
     import os
 
@@ -31,7 +31,7 @@ def upload_cifar10_as_numpy(dataset_project, dataset_name):
         task_name="Dataset Upload",
         task_type=Task.TaskTypes.data_processing,
     )
-    task.execute_remotely(queue_name="queue_name", exit_process=True)
+    task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
     # Load CIFAR-10 data
     (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
     print(f"Train images shape: {train_images.shape}")
@@ -67,12 +67,12 @@ def upload_cifar10_as_numpy(dataset_project, dataset_name):
     os.remove("test_images_10.npy")
     os.remove("test_labels_10.npy")
 
-    print(f"Raw CIFAR-100 dataset uploaded with ID: {raw_dataset.id}")
+    print(f"Brain Tumour dataset uploaded with ID: {raw_dataset.id}")
     return raw_dataset.id
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Upload CIFAR-100 Raw Data to ClearML")
+    parser = argparse.ArgumentParser(description="Upload Brain Tumour Data to ClearML")
     parser.add_argument(
         "--dataset_project",
         type=str,
@@ -86,4 +86,4 @@ if __name__ == "__main__":
         help="ClearML dataset name for raw data",
     )
     args = parser.parse_args()
-    upload_cifar10_as_numpy(args.dataset_project, args.dataset_name)
+    upload_brain_tumour_dataset_as_numpy(args.dataset_project, args.dataset_name)

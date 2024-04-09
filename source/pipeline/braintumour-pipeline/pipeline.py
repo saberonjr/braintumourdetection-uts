@@ -1,12 +1,12 @@
 from clearml import PipelineController, Task
 
-from first_mlops_pipeline.evaluate_model import evaluate_model, log_debug_images
-from first_mlops_pipeline.preprocess_upload_cifar10 import (
+from braintumour_pipeline.evaluate_model import evaluate_model, log_debug_images
+from braintumour_pipeline.preprocess_upload_brain_tumour_data import (
     preprocess_and_upload_cifar10,
     save_preprocessed_data,
 )
-from first_mlops_pipeline.train_model import train_model
-from first_mlops_pipeline.update_model import (
+from braintumour_pipeline.train_model import train_model
+from braintumour_pipeline.update_model import (
     archive_existing_model,
     cleanup_repo,
     clone_repo,
@@ -16,7 +16,7 @@ from first_mlops_pipeline.update_model import (
     update_model,
     update_weights,
 )
-from first_mlops_pipeline.upload_cifar_raw import (
+from braintumour_pipeline.upload_brain_tumour_raw import (
     save_numpy_arrays,
     upload_cifar10_as_numpy,
 )
@@ -34,13 +34,13 @@ def create_cifar10_pipeline(
 ):
     from clearml import PipelineController, Task
 
-    from first_mlops_pipeline.evaluate_model import evaluate_model, log_debug_images
-    from first_mlops_pipeline.preprocess_upload_cifar10 import (
+    from braintumour_pipeline.evaluate_model import evaluate_model, log_debug_images
+    from braintumour_pipeline.preprocess_upload_brain_tumour_data import (
         preprocess_and_upload_cifar10,
         save_preprocessed_data,
     )
-    from first_mlops_pipeline.train_model import train_model
-    from first_mlops_pipeline.update_model import (
+    from braintumour_pipeline.train_model import train_model
+    from braintumour_pipeline.update_model import (
         archive_existing_model,
         cleanup_repo,
         clone_repo,
@@ -50,7 +50,7 @@ def create_cifar10_pipeline(
         update_model,
         update_weights,
     )
-    from first_mlops_pipeline.upload_cifar_raw import (
+    from braintumour_pipeline.upload_cifar_raw import (
         save_numpy_arrays,
         upload_cifar10_as_numpy,
     )

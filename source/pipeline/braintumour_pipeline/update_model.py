@@ -156,7 +156,7 @@ def update_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
         task_name="Model Upload",
         task_type=Task.TaskTypes.custom,
     )
-    task.execute_remotely(queue_name="queue_name", exit_process=True)
+    task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
     """Fetches the trained model using its ID and updates it in the repository."""
     load_dotenv(dotenv_path=env_path)
     DEPLOY_KEY_PATH = os.getenv("DEPLOY_KEY_PATH")
@@ -189,13 +189,13 @@ if __name__ == "__main__":
         "--env_path",
         # required=True,
         help="Path to the .env file",
-        default="/Users/apple/Desktop/AI_Studio/Introduction_to_MLOPS/First_Pipeline/.env",
+        default=" /Users/soterojrsaberon/GitHub/braintumourdetection-team/source/pipeline/.env",
     )
     parser.add_argument(
         "--repo_url",
         # required=True,
         help="Repository URL",
-        default="git@github.com:GitarthVaishnav/Cifar10_SimpleFlaskApp.git",
+        default="git@github.com:uts-strykers/braintumourdetection.git",
     )
     parser.add_argument(
         "--development_branch",
@@ -207,7 +207,7 @@ if __name__ == "__main__":
         "--project_name",
         # required=True,
         help="ClearML Project name",
-        default="CIFAR-10 Project",
+        default="Brain Tumour Project",
     )
     args = parser.parse_args()
 

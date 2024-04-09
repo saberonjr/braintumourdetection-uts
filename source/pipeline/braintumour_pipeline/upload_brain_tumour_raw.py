@@ -18,7 +18,7 @@ def save_numpy_arrays(data, labels, data_filename, labels_filename):
     np.save(labels_filename, labels)
 
 
-def upload_brain_tumour_dataset_as_numpy(dataset_project, dataset_name):
+def upload_brain_tumour_data_as_numpy(dataset_project, dataset_name):
     import argparse
     import os
 
@@ -86,4 +86,4 @@ if __name__ == "__main__":
         help="ClearML dataset name for raw data",
     )
     args = parser.parse_args()
-    upload_brain_tumour_dataset_as_numpy(args.dataset_project, args.dataset_name)
+    upload_brain_tumour_data_as_numpy(args.dataset_project, args.dataset_name)

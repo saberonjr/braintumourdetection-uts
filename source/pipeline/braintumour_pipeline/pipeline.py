@@ -2,7 +2,7 @@ from clearml import PipelineController, Task
 
 from braintumour_pipeline.evaluate_model import evaluate_model, log_debug_images
 from braintumour_pipeline.preprocess_upload_brain_tumour_data import (
-    preprocess_and_upload_cifar10,
+    preprocess_and_upload_brain_tumour,
     save_preprocessed_data,
 )
 from braintumour_pipeline.train_model import train_model
@@ -18,25 +18,25 @@ from braintumour_pipeline.update_model import (
 )
 from braintumour_pipeline.upload_brain_tumour_raw import (
     save_numpy_arrays,
-    upload_cifar10_as_numpy,
+    upload_brain_tumour_data_as_numpy
 )
 
 
-def create_cifar10_pipeline(
+def create_brain_tumour_pipeline(
     epochs: int = 10,
-    pipeline_name: str = "CIFAR-10 Training Pipeline",
-    dataset_project: str = "CIFAR-10 Project",
-    raw_dataset_name: str = "CIFAR-10 Raw",
-    processed_dataset_name: str = "CIFAR-10 Preprocessed",
+    pipeline_name: str = "Brain Tumour Training Pipeline",
+    dataset_project: str = "Brain Tumour Project",
+    raw_dataset_name: str = "Brain Tumour Raw",
+    processed_dataset_name: str = "Brain Tumour Preprocessed",
     env_path: str = "/path/to/.env",
-    repo_url: str = "git@github.com:YourUser/YourRepo.git",
+    repo_url: str = "git@github.com:uts-strykers/braintumourdetection.git",
     development_branch: str = "development",
 ):
     from clearml import PipelineController, Task
 
     from braintumour_pipeline.evaluate_model import evaluate_model, log_debug_images
     from braintumour_pipeline.preprocess_upload_brain_tumour_data import (
-        preprocess_and_upload_cifar10,
+        preprocess_and_upload_brain_tumour,
         save_preprocessed_data,
     )
     from braintumour_pipeline.train_model import train_model
@@ -50,9 +50,9 @@ def create_cifar10_pipeline(
         update_model,
         update_weights,
     )
-    from braintumour_pipeline.upload_cifar_raw import (
+    from braintumour_pipeline.upload_brain_tumour_raw import (
         save_numpy_arrays,
-        upload_cifar10_as_numpy,
+        upload_brain_tumour_data_as_numpy,
     )
 
     # Initialize a new pipeline controller task
@@ -78,30 +78,30 @@ def create_cifar10_pipeline(
 
     # Step 1: Upload CIFAR-10 Raw Data
     pipeline.add_function_step(
-        name="upload_cifar10_raw_data",
-        function=upload_cifar10_as_numpy,
+        name="upload_brain_tumour_raw_data",
+        function=upload_brain_tumour_data_as_numpy,
         function_kwargs={
             "dataset_project": "${pipeline.dataset_project}",
             "dataset_name": "${pipeline.raw_dataset_name}",
         },
         task_type=Task.TaskTypes.data_processing,
-        task_name="Upload CIFAR-10 Raw Data",
+        task_name="Upload Brain Tumour Raw Data",
         function_return=["raw_dataset_id"],
         helper_functions=[save_numpy_arrays],
         cache_executed_step=False,
     )
 
-    # Step 2: Preprocess CIFAR-10 Data
+    # Step 2: Preprocess Brain Tumour Data
     pipeline.add_function_step(
-        name="preprocess_cifar10_data",
-        function=preprocess_and_upload_cifar10,
+        name="preprocess_upload_brain_tumour_data",
+        function=preprocess_and_upload_brain_tumour,
         function_kwargs={
-            "raw_dataset_id": "${upload_cifar10_raw_data.raw_dataset_id}",
+            "raw_dataset_id": "${upload_brain_tumour_raw_data.raw_dataset_id}",
             "processed_dataset_project": "${pipeline.dataset_project}",
             "processed_dataset_name": "${pipeline.processed_dataset_name}",
         },
         task_type=Task.TaskTypes.data_processing,
-        task_name="Preprocess and Upload CIFAR-10",
+        task_name="Preprocess and Upload Brain Tumour",
         function_return=["processed_dataset_id"],
         helper_functions=[save_preprocessed_data],
         cache_executed_step=False,
@@ -109,30 +109,30 @@ def create_cifar10_pipeline(
 
     # Step 3: Train Model
     pipeline.add_function_step(
-        name="train_cifar10_model",
+        name="train_brain_tumour_model",
         function=train_model,
         function_kwargs={
-            "processed_dataset_id": "${preprocess_cifar10_data.processed_dataset_id}",
+            "processed_dataset_id": "${preprocess_brain_tumour_data.processed_dataset_id}",
             "epochs": "${pipeline.epochs}",
             "project_name": "${pipeline.dataset_project}",
         },
         task_type=Task.TaskTypes.training,
-        task_name="Train CIFAR-10 Model",
+        task_name="Train Brain Tumour Model",
         function_return=["model_id"],
         cache_executed_step=False,
     )
 
     # Step 4: Evaluate Model
     pipeline.add_function_step(
-        name="evaluate_cifar10_model",
+        name="evaluate_brain_tumour_model",
         function=evaluate_model,
         function_kwargs={
-            "model_id": "${train_cifar10_model.model_id}",
-            "processed_dataset_id": "${preprocess_cifar10_data.processed_dataset_id}",
+            "model_id": "${train_brain_tumour_model.model_id}",
+            "processed_dataset_id": "${preprocess_brain_tumour_data.processed_dataset_id}",
             "project_name": "${pipeline.dataset_project}",
         },
         task_type=Task.TaskTypes.testing,
-        task_name="Evaluate CIFAR-10 Model",
+        task_name="Evaluate Brain Tumour Model",
         helper_functions=[log_debug_images],
         cache_executed_step=False,
     )
@@ -142,7 +142,7 @@ def create_cifar10_pipeline(
         name="update_model_in_github",
         function=update_model,
         function_kwargs={
-            "model_id": "${train_cifar10_model.model_id}",
+            "model_id": "${train_brain_tumour_model.model_id}",
             "env_path": "${pipeline.env_path}",
             "REPO_URL": "${pipeline.REPO_URL}",
             "DEVELOPMENT_BRANCH": "${pipeline.DEVELOPMENT_BRANCH}",
@@ -163,5 +163,5 @@ def create_cifar10_pipeline(
     )
 
     # Start the pipeline
-    pipeline.start(queue="gitarth")
-    print("CIFAR-10 pipeline initiated. Check ClearML for progress.")
+    pipeline.start(queue="uts-strykers-queue")
+    print("Brain Tumour pipeline initiated. Check ClearML for progress.")

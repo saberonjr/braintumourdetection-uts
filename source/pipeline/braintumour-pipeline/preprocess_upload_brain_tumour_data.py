@@ -16,7 +16,7 @@ def save_preprocessed_data(data, labels, data_filename, labels_filename):
     np.save(labels_filename, labels)
 
 
-def preprocess_and_upload_cifar10(
+def preprocess_and_upload_braintumour(
     raw_dataset_id, processed_dataset_project, processed_dataset_name
 ):
     import argparse
@@ -80,19 +80,19 @@ def preprocess_and_upload_cifar10(
     os.remove("test_images_preprocessed.npy")
     os.remove("test_labels_preprocessed.npy")
 
-    print(f"Preprocessed CIFAR-100 dataset uploaded with ID: {processed_dataset.id}")
+    print(f"Preprocessed Brain Tumour dataset uploaded with ID: {processed_dataset.id}")
     return processed_dataset.id
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Preprocess and Upload CIFAR-10 Data to ClearML"
+        description="Preprocess and Upload Brain Tumour Data to ClearML"
     )
     parser.add_argument(
         "--raw_dataset_id",
         type=str,
         required=True,
-        help="ID of the raw CIFAR-10 dataset in ClearML",
+        help="ID of the raw Brain Tumour dataset in ClearML",
     )
     parser.add_argument(
         "--processed_dataset_project",
@@ -107,6 +107,6 @@ if __name__ == "__main__":
         help="Name for the processed dataset in ClearML",
     )
     args = parser.parse_args()
-    preprocess_and_upload_cifar10(
+    preprocess_and_upload_braintumour(
         args.raw_dataset_id, args.processed_dataset_project, args.processed_dataset_name
     )

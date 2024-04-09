@@ -28,7 +28,7 @@ def upload_brain_tumour_data_as_numpy(dataset_project, dataset_name):
 
     task = Task.init(
         project_name=dataset_project,
-        task_name="Dataset Upload",
+        task_name="Brain Tumour Dataset Upload",
         task_type=Task.TaskTypes.data_processing,
     )
     task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)

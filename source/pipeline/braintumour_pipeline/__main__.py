@@ -18,7 +18,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Import the create_cifar10_pipeline function inside the main block to avoid unnecessary imports when this script is imported as a module elsewhere
-    from first_mlops_pipeline.pipeline import create_cifar10_pipeline
+    from braintumour_pipeline.pipeline import create_brain_tumour_pipeline
 
     # Call the function with the parsed arguments
     create_brain_tumour_pipeline(

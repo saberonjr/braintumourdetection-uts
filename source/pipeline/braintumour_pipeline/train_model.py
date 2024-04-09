@@ -29,7 +29,7 @@ def train_model(processed_dataset_id, epochs, project_name):
         task_type=Task.TaskTypes.training,
         auto_connect_frameworks="keras",
     )
-    task.execute_remotely(queue_name="queue_name", exit_process=True)
+    task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
 
     # Access dataset
     dataset = Dataset.get(dataset_id=processed_dataset_id)
@@ -112,7 +112,7 @@ def train_model(processed_dataset_id, epochs, project_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Train a CNN on CIFAR-10 and log with ClearML."
+        description="Train a CNN on Brain Tumour and log with ClearML."
     )
     parser.add_argument(
         "--processed_dataset_id",

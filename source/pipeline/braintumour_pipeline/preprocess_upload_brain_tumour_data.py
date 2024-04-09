@@ -16,7 +16,7 @@ def save_preprocessed_data(data, labels, data_filename, labels_filename):
     np.save(labels_filename, labels)
 
 
-def preprocess_and_upload_braintumour(
+def preprocess_and_upload_brain_tumour(
     raw_dataset_id, processed_dataset_project, processed_dataset_name
 ):
     import argparse
@@ -107,6 +107,6 @@ if __name__ == "__main__":
         help="Name for the processed dataset in ClearML",
     )
     args = parser.parse_args()
-    preprocess_and_upload_braintumour(
+    preprocess_and_upload_brain_tumour(
         args.raw_dataset_id, args.processed_dataset_project, args.processed_dataset_name
     )

@@ -23,7 +23,7 @@ def upload_brain_tumour_data_as_numpy(dataset_project, dataset_name):
     import os
 
     import numpy as np
-    from clearml import Dataset, Task --data
+    from clearml import Dataset, Task
     from tensorflow.keras.datasets import cifar10
 
     task = Task.init(
@@ -31,7 +31,7 @@ def upload_brain_tumour_data_as_numpy(dataset_project, dataset_name):
         task_name="Brain Tumour Dataset Upload",
         task_type=Task.TaskTypes.data_processing,
     )
-    #task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
+    task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
     # Load CIFAR-10 data
     (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
     print(f"Train images shape: {train_images.shape}")

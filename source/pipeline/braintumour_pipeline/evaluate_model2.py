@@ -49,7 +49,7 @@ def evaluate_model(model_id, processed_dataset_id, project_name):
         task_name="Model Evaluation",
         task_type=Task.TaskTypes.testing,
     )
-    #task.execute_remotely(queue_name="uts-stykers-queue", exit_process=True)
+    task.execute_remotely(queue_name="uts-stykers-queue", exit_process=True)
 
     # Fetch and load the trained model
     model = Model(model_id=model_id)
@@ -107,9 +107,6 @@ if __name__ == "__main__":
         required=True,
         help="ClearML processed dataset id",
     )
-    parser.add_argument(
-        "--project_name", type=str, required=True, default="BrainTumourProject", help="Project name"
-    )
     args = parser.parse_args()
 
-    evaluate_model(args.model_id, args.processed_dataset_id, , args.project_name))
+    evaluate_model(args.model_id, args.processed_dataset_id)

@@ -1,58 +1,60 @@
 from clearml import PipelineController, Task
 
-from braintumour_pipeline.evaluate_model import evaluate_model, log_debug_images
-from braintumour_pipeline.preprocess_upload_brain_tumour_data import (
-    preprocess_and_upload_brain_tumour,
-    save_preprocessed_data,
+from evaluate_model import (
+    evaluate_model, 
+    #log_debug_images
 )
-from braintumour_pipeline.train_model import train_model
-from braintumour_pipeline.update_model import (
-    archive_existing_model,
-    cleanup_repo,
-    clone_repo,
-    commit_and_push,
-    configure_ssh_key,
-    ensure_archive_dir,
+from preprocess_brainscan_data import (
+    preprocess_and_upload_brainscan_data,
+    #save_preprocessed_data,
+)
+from train_model import train_model
+from update_model import (
+  #archive_existing_model,
+  #cleanup_repo,
+  #clone_repo,
+  #commit_and_push,
+  #configure_ssh_key,
+  #ensure_archive_dir,
     update_model,
-    update_weights,
+   # update_weights,
 )
-from braintumour_pipeline.upload_brain_tumour_raw import (
-    save_numpy_arrays,
-    upload_brain_tumour_data_as_numpy
+from update_model import (
+    update_model,
+   # update_weights
 )
-
 
 def create_brain_tumour_pipeline(
     epochs: int = 10,
-    pipeline_name: str = "Brain Tumour Training Pipeline",
-    dataset_project: str = "Brain Tumour Project",
-    raw_dataset_name: str = "Brain Tumour Raw",
-    processed_dataset_name: str = "Brain Tumour Preprocessed",
+    pipeline_name: str = "BrainScan Pipeline",
+    dataset_project: str = "BrainScan",
+    raw_dataset_name: str = "BrainScan Raw Dataset",
+    processed_dataset_name: str = "BrainScan Preprocessed Dataset",
     env_path: str = "/path/to/.env",
     repo_url: str = "git@github.com:uts-strykers/braintumourdetection.git",
-    development_branch: str = "development",
+    development_branch: str = "development"
 ):
     from clearml import PipelineController, Task
 
-    from braintumour_pipeline.evaluate_model import evaluate_model, log_debug_images
-    from braintumour_pipeline.preprocess_upload_brain_tumour_data import (
-        preprocess_and_upload_brain_tumour,
+    from evaluate_model import evaluate_model # , log_debug_images
+    from preprocess_brainscan_data import (
         save_preprocessed_data,
     )
-    from braintumour_pipeline.train_model import train_model
-    from braintumour_pipeline.update_model import (
-        archive_existing_model,
-        cleanup_repo,
-        clone_repo,
-        commit_and_push,
-        configure_ssh_key,
-        ensure_archive_dir,
+    from train_model import train_model
+    from update_model import (
+       #archive_existing_model,
+       #cleanup_repo,
+       #clone_repo,
+       #commit_and_push,
+       #configure_ssh_key,
+       #ensure_archive_dir,
         update_model,
-        update_weights,
+        #update_weights,
     )
-    from braintumour_pipeline.upload_brain_tumour_raw import (
-        save_numpy_arrays,
-        upload_brain_tumour_data_as_numpy,
+    from upload_raw_data import (
+        #save_numpy_arrays,
+        #upload_brain_tumour_data_as_numpy,
+        upload_raw_dataset_as_numpy_to_clearml
     )
 
     # Initialize a new pipeline controller task
@@ -76,10 +78,10 @@ def create_brain_tumour_pipeline(
     pipeline.add_parameter(name="REPO_URL", default=repo_url)
     pipeline.add_parameter(name="DEVELOPMENT_BRANCH", default=development_branch)
 
-    # Step 1: Upload CIFAR-10 Raw Data
+    # Step 1: Upload BrainScan Raw Data
     pipeline.add_function_step(
         name="upload_brain_tumour_raw_data",
-        function=upload_brain_tumour_data_as_numpy,
+        function=upload_raw_dataset_as_numpy_to_clearml,
         function_kwargs={
             "dataset_project": "${pipeline.dataset_project}",
             "dataset_name": "${pipeline.raw_dataset_name}",
@@ -87,14 +89,14 @@ def create_brain_tumour_pipeline(
         task_type=Task.TaskTypes.data_processing,
         task_name="Upload Brain Tumour Raw Data",
         function_return=["raw_dataset_id"],
-        helper_functions=[save_numpy_arrays],
+        #helper_functions=[save_numpy_arrays],
         cache_executed_step=False,
     )
 
     # Step 2: Preprocess Brain Tumour Data
     pipeline.add_function_step(
-        name="preprocess_upload_brain_tumour_data",
-        function=preprocess_and_upload_brain_tumour,
+        name="preprocess_brain_tumour_data",
+        function=preprocess_and_upload_brainscan_data,
         function_kwargs={
             "raw_dataset_id": "${upload_brain_tumour_raw_data.raw_dataset_id}",
             "processed_dataset_project": "${pipeline.dataset_project}",
@@ -133,7 +135,7 @@ def create_brain_tumour_pipeline(
         },
         task_type=Task.TaskTypes.testing,
         task_name="Evaluate Brain Tumour Model",
-        helper_functions=[log_debug_images],
+        #helper_functions=[log_debug_images],
         cache_executed_step=False,
     )
 
@@ -149,13 +151,13 @@ def create_brain_tumour_pipeline(
             "project_name": "${pipeline.dataset_project}",
         },
         helper_functions=[
-            configure_ssh_key,
-            clone_repo,
-            ensure_archive_dir,
-            archive_existing_model,
-            update_weights,
-            commit_and_push,
-            cleanup_repo,
+           #configure_ssh_key,
+           #clone_repo,
+           #ensure_archive_dir,
+           #archive_existing_model,
+           #update_weights,
+           #commit_and_push,
+           #cleanup_repo,
         ],
         task_type=Task.TaskTypes.custom,
         task_name="Export Model to GitHub Repository",
@@ -163,5 +165,9 @@ def create_brain_tumour_pipeline(
     )
 
     # Start the pipeline
-    pipeline.start(queue="uts-strykers-queue")
+    pipeline.start( queue="uts-strykers-queue")
     print("Brain Tumour pipeline initiated. Check ClearML for progress.")
+
+
+if __name__ == "__main__":
+    create_brain_tumour_pipeline()

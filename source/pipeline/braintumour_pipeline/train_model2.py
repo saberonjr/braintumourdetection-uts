@@ -29,7 +29,7 @@ def train_model(processed_dataset_id, epochs, project_name):
         task_type=Task.TaskTypes.training,
         auto_connect_frameworks="keras",
     )
-    #task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
+    task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
 
     # Access dataset
     dataset = Dataset.get(dataset_id=processed_dataset_id)
@@ -123,10 +123,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--epochs", type=int, default=10, help="Number of training epochs"
     )
-
-    parser.add_argument(
-        "--project_name", type=str, required=True, default="BrainTumourProject", help="Project name"
-    )
     args = parser.parse_args()
 
-    train_model(args.processed_dataset_id, args.epochs, args.project_name)
+    train_model(args.processed_dataset_id, args.epochs)

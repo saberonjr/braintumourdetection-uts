@@ -3,42 +3,42 @@ import os
 
 import os
 import json
-from PIL import Image
-
-def save_numpy_arrays(data, labels, data_filename, labels_filename):
-    import argparse
-    import os
-
-    import numpy as np
-    from clearml import Dataset
-  
-    np.save(data_filename, data)
-    np.save(labels_filename, labels)
-
-def load_dataset(dataset_base_path):
-    datasets = {}
-    for dataset_type in ['test', 'train', 'valid']:
-        images = []
-        annotations = []
-        folder_path = os.path.join(dataset_base_path, dataset_type)
-        
-        # Load annotations
-        annotation_file = os.path.join(folder_path, '_annotations.coco.json')
-        if os.path.isfile(annotation_file):
-            with open(annotation_file, 'r') as file:
-                annotations = json.load(file)
-        
-        # Load images
-        for file_name in os.listdir(folder_path):
-            print("processing: ", file_name)
-            if file_name.endswith(('.jpg', '.png')):
-                image_path = os.path.join(folder_path, file_name)
-                images.append(Image.open(image_path))
-        
-        datasets[dataset_type] = {'images': images, 'annotations': annotations}
-    
-    return datasets
-
+##from PIL import Image
+##
+##def save_numpy_arrays(data, labels, data_filename, labels_filename):
+##    import argparse
+##    import os
+##
+##    import numpy as np
+##    from clearml import Dataset
+##  
+##    np.save(data_filename, data)
+##    np.save(labels_filename, labels)
+##
+##def load_dataset(dataset_base_path):
+##    datasets = {}
+##    for dataset_type in ['test', 'train', 'valid']:
+##        images = []
+##        annotations = []
+##        folder_path = os.path.join(dataset_base_path, dataset_type)
+##        
+##        # Load annotations
+##        annotation_file = os.path.join(folder_path, '_annotations.coco.json')
+##        if os.path.isfile(annotation_file):
+##            with open(annotation_file, 'r') as file:
+##                annotations = json.load(file)
+##        
+##        # Load images
+##        for file_name in os.listdir(folder_path):
+##            print("processing: ", file_name)
+##            if file_name.endswith(('.jpg', '.png')):
+##                image_path = os.path.join(folder_path, file_name)
+##                images.append(Image.open(image_path))
+##        
+##        datasets[dataset_type] = {'images': images, 'annotations': annotations}
+##    
+##    return datasets
+##
 def upload_raw_dataset_as_numpy_to_clearml(dataset_project, dataset_name, dataset_base_path, dataset_temp_path):
     import numpy as np
     from clearml import Dataset
@@ -53,7 +53,7 @@ def upload_raw_dataset_as_numpy_to_clearml(dataset_project, dataset_name, datase
     )
     task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
 
-    task.get_logger().info("Begin executing Upload Raw Dataset")
+    ##task.get_logger().info("Begin executing Upload Raw Dataset")
     ##datasets = load_dataset(dataset_base_path)
     ###datasets.head()
     ##dataset = Dataset.create(f'BrainScan Raw Dataset')
@@ -91,7 +91,7 @@ def upload_raw_dataset_as_numpy_to_clearml(dataset_project, dataset_name, datase
     ##print(f'Uploaded Raw Dataset to ClearML with ID: {dataset.id}')
 ##
     ##return dataset.id
-    task.get_logger().info("Finished executing Upload Raw Dataset")
+    ##task.get_logger().info("Finished executing Upload Raw Dataset")
     return "4bc7c34812444085a4cb1bb22fe0d507"
 
 if __name__ == "__main__":

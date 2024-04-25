@@ -30,7 +30,7 @@ def create_brain_tumour_pipeline(
     dataset_project: str = "BrainScan",
     raw_dataset_name: str = "BrainScan Raw Dataset",
     processed_dataset_name: str = "BrainScan Preprocessed Dataset",
-    env_path: str = "/path/to/.env",
+    env_path: str = "/Users/soterojrsaberon/GitHub/braintumourdetection-team/source/pipeline/.env",
     repo_url: str = "git@github.com:uts-strykers/braintumourdetection.git",
     development_branch: str = "development"
 ):

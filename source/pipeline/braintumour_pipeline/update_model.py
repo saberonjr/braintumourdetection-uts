@@ -128,7 +128,7 @@ def update_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
         task_name="Model Upload",
         task_type=Task.TaskTypes.custom,
     )
-   ###task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
+   task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
    ##"""Fetches the trained model using its ID and updates it in the repository."""
    ##load_dotenv(dotenv_path=env_path)
    ##DEPLOY_KEY_PATH = os.getenv("DEPLOY_KEY_PATH")

@@ -109,6 +109,7 @@ def create_brain_tumour_pipeline(
         function_return=["processed_dataset_id"],
         helper_functions=[save_preprocessed_data],
         cache_executed_step=False,
+        parents=["upload_brain_tumour_raw_data"]
     )
 
     # Step 3: Train Model
@@ -124,6 +125,7 @@ def create_brain_tumour_pipeline(
         task_name="Train Brain Tumour Model",
         function_return=["model_id"],
         cache_executed_step=False,
+        parents=["preprocess_brain_tumour_data"]
     )
 
     # Step 4: Evaluate Model
@@ -139,6 +141,7 @@ def create_brain_tumour_pipeline(
         task_name="Evaluate Brain Tumour Model",
         #helper_functions=[log_debug_images],
         cache_executed_step=False,
+        parents=["train_brain_tumour_model"]
     )
 
     # Step 5: Update Model in GitHub Repository

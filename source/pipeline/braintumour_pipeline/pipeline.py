@@ -34,7 +34,8 @@ def create_brain_tumour_pipeline(
     repo_url: str = "git@github.com:uts-strykers/braintumourdetection.git",
     development_branch: str = "development",
     dataset_base_path: str = "/this is the path/",
-    dataset_temp_path: str = "/this is the path/"
+    dataset_temp_path: str = "/this is the path/",
+    processed_dataset_temp_path: str = "/this is the path/"
 ):
     from clearml import PipelineController, Task
 
@@ -81,6 +82,7 @@ def create_brain_tumour_pipeline(
     pipeline.add_parameter(name="DEVELOPMENT_BRANCH", default=development_branch)
     pipeline.add_parameter(name="dataset_base_path", default=dataset_base_path)
     pipeline.add_parameter(name="dataset_temp_path", default=dataset_temp_path) 
+    pipeline.add_parameter(name="processed_dataset_temp_path", default=processed_dataset_temp_path)
     pipeline.set_default_execution_queue("default")
 
     # Step 1: Upload BrainScan Raw Data

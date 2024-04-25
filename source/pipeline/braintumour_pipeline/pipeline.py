@@ -87,6 +87,8 @@ def create_brain_tumour_pipeline(
         function_kwargs={
             "dataset_project": "${pipeline.dataset_project}",
             "dataset_name": "${pipeline.raw_dataset_name}",
+            "dataset_base_path": "${pipeline.dataset_base_path}",
+            "dataset_temp_path": "${pipeline.dataset_temp_path}"
         },
         task_type=Task.TaskTypes.data_processing,
         task_name="Upload Brain Tumour Raw Data",
@@ -103,6 +105,7 @@ def create_brain_tumour_pipeline(
             "raw_dataset_id": "${upload_brain_tumour_raw_data.raw_dataset_id}",
             "processed_dataset_project": "${pipeline.dataset_project}",
             "processed_dataset_name": "${pipeline.processed_dataset_name}",
+            "processed_dataset_temp_path": "${pipeline.processed_dataset_temp_path}",
         },
         task_type=Task.TaskTypes.data_processing,
         task_name="Preprocess and Upload Brain Tumour",

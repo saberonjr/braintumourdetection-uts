@@ -136,6 +136,6 @@ if __name__ == "__main__":
     #)
     preprocess_and_upload_brainscan_data("1db93c08a49f4300b2c64ba9a38ba3ee",
                                          "BrainScan",
-                                         "BrainScan Preprocessed Dataset",
+                                         "BrainScanPreprocessedDataset",
                                          "/Users/soterojrsaberon/Downloads/Dataset"
                                         )

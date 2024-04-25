@@ -124,6 +124,6 @@ if __name__ == "__main__":
     #args = parser.parse_args()
     #upload_raw_dataset_as_numpy_to_clearml(args.dataset_project, args.dataset_name, args.dataset_base_path)
     upload_raw_dataset_as_numpy_to_clearml("BrainScan", 
-                                           "BrainScan Raw Dataset", 
+                                           "BrainScanRawDataset", 
                                            "/Users/soterojrsaberon/Library/CloudStorage/GoogleDrive-sotero.j.saberon@student.uts.edu.au/My Drive/42174/brain-tumour-detector/Dataset",
                                            "/Users/soterojrsaberon/Downloads/Dataset")

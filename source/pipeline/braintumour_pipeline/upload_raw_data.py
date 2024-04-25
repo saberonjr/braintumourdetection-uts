@@ -51,7 +51,7 @@ def upload_raw_dataset_as_numpy_to_clearml(dataset_project, dataset_name, datase
         task_name="Dataset Upload",
         task_type=Task.TaskTypes.data_processing
     )
-    task.execute_remotely(queue_name="default") #, exit_process=True)
+    task.execute_remotely(queue_name="uts-strykers-queue") #, exit_process=True)
 
     ##task.get_logger().info("Begin executing Upload Raw Dataset")
     ##datasets = load_dataset(dataset_base_path)

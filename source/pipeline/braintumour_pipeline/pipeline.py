@@ -78,7 +78,7 @@ def create_brain_tumour_pipeline(
     pipeline.add_parameter(name="REPO_URL", default=repo_url)
     pipeline.add_parameter(name="DEVELOPMENT_BRANCH", default=development_branch)
 
-    pipeline.set_default_execution_queue("uts-strykers-queue")
+    pipeline.set_default_execution_queue("default")
 
     # Step 1: Upload BrainScan Raw Data
     step1 = pipeline.add_function_step(

@@ -175,6 +175,7 @@ def create_brain_tumour_pipeline(
         task_type=Task.TaskTypes.custom,
         task_name="Export Model to GitHub Repository",
         cache_executed_step=False,
+        parents=["evaluate_brain_tumour_model"]
     )
 
     # Start the pipeline

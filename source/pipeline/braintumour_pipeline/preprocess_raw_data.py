@@ -31,7 +31,7 @@ def preprocess_and_upload_brainscan_data(
         task_name="Dataset Preprocessing",
         task_type=Task.TaskTypes.data_processing,
     )
-    task.execute_remotely(queue_name="uts-strykers-queue", exit_process=True)
+    task.execute_remotely(queue_name="default", exit_process=True)
     ###raw_dataset = Dataset.get(dataset_id=raw_dataset_id)
     ###raw_data_path = raw_dataset.get_local_copy()
 ##

@@ -167,7 +167,7 @@ def create_brain_tumour_pipeline(
     )
 
     # Start the pipeline
-    pipeline.start( queue="uts-strykers-queue")
+    pipeline.start( queue="default")
     print("Brain Tumour pipeline initiated. Check ClearML for progress.")
 
 

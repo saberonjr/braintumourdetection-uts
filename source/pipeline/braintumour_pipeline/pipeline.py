@@ -81,7 +81,7 @@ def create_brain_tumour_pipeline(
     pipeline.set_default_execution_queue("default")
 
     # Step 1: Upload BrainScan Raw Data
-    step1 = pipeline.add_function_step(
+    pipeline.add_function_step(
         name="upload_brain_tumour_raw_data",
         function=upload_raw_dataset_as_numpy_to_clearml,
         function_kwargs={

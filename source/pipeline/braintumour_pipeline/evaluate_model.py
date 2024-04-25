@@ -47,9 +47,9 @@ def evaluate_model(model_id, processed_dataset_id, project_name):
     task = Task.init(
         project_name=project_name,
         task_name="Model Evaluation",
-        task_type=Task.TaskTypes.testing,
+        task_type=Task.TaskTypes.testing
     )
-   task.execute_remotely(queue_name="uts-stykers-queue", exit_process=True)
+    task.execute_remotely(queue_name="uts-stykers-queue", exit_process=True)
 
    ### Fetch and load the trained model
    ##model = Model(model_id=model_id)

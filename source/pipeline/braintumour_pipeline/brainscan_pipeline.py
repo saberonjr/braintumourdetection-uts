@@ -71,7 +71,7 @@ def step_two(dataset_project, dataset_name, dataset_root):
     print(f"Test dataset uploaded with ID: {dataset.id}")
     return dataset.id 
     
-@PipelineDecorator.component(parents=['UploadRawTestData'],name="UploadRawValidData", return_values=["valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['UploadRawTrainData'],name="UploadRawValidData", return_values=["valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_three(dataset_project, dataset_name, dataset_root):
     import os
     from clearml import Dataset
@@ -94,7 +94,7 @@ def step_three(dataset_project, dataset_name, dataset_root):
     print(f"Valid dataset uploaded with ID: {dataset.id}")
     return dataset.id 
  
-@PipelineDecorator.component(parents=['UploadRawValidData'],name="PreprocessAndUploadTrainData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['UploadRawTrainData'],name="PreprocessAndUploadTrainData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
     #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
 
@@ -135,7 +135,7 @@ def preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset
 
     return processed_dataset.id
 
-@PipelineDecorator.component(parents=['PreprocessAndUploadTrainData'],name="PreprocessAndUploadTestData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['UploadRawTestData'],name="PreprocessAndUploadTestData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
     #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
 
@@ -177,7 +177,7 @@ def preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_n
     return processed_dataset.id
 
 
-@PipelineDecorator.component(parents=['PreprocessAndUploadTestData'],name="PreprocessAndUploadValidData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['UploadRawValidData'],name="PreprocessAndUploadValidData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def preprocess_and_upload_valid_data(raw_valid_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
     #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
 
@@ -220,7 +220,7 @@ def preprocess_and_upload_valid_data(raw_valid_dataset_id, dataset_root, dataset
 
 #end Preprocess Raw Data
 
-@PipelineDecorator.component(parents=['PreprocessAndUploadValidData'],name="OptimizeHyperparameters", cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(parents=['PreprocessAndUploadTrainData', 'PreprocessAndUploadTestData', 'PreprocessAndUploadValidData'],name="OptimizeHyperparameters", cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_id, output_root):
     import os
     import json
@@ -341,7 +341,7 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
     print(f"Best hyperparameters: {study.best_trial.params}")
 
 
-@PipelineDecorator.component(parents = ['PreprocessAndUploadValidData'],name="TrainModel", return_values=['model'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(parents = ['OptimizeHyperparameters'],name="TrainModel", return_values=['model'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def train_model(train_dataset_id, valid_dataset_id, output_root):
     import os
     import json
@@ -772,7 +772,7 @@ def test_model(test_dataset_id, output_root):
     create_predictions(dataset_dicts, my_dataset_test_metadata, seed=51, image_scale=1)
 
   
-@PipelineDecorator.component(parents=['TestModel'],name="UploadModel", cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['EvaluateModel'],name="UploadModel", cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def upload_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name):
 
     import argparse

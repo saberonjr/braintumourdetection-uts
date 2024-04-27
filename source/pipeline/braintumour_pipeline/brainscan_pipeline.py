@@ -48,7 +48,7 @@ def step_one(dataset_project, dataset_name, dataset_root):
     print(f"Train dataset uploaded with ID: {dataset.id}")
     return dataset.id 
     
-@PipelineDecorator.component(name="UploadRawTestData", return_values=["test_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['UploadRawTrainData'],  name="UploadRawTestData", return_values=["test_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_two(dataset_project, dataset_name, dataset_root):
     import os
     from clearml import Dataset
@@ -71,7 +71,7 @@ def step_two(dataset_project, dataset_name, dataset_root):
     print(f"Test dataset uploaded with ID: {dataset.id}")
     return dataset.id 
     
-@PipelineDecorator.component(name="UploadRawValidData", return_values=["valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['UploadRawTestData'],name="UploadRawValidData", return_values=["valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_three(dataset_project, dataset_name, dataset_root):
     import os
     from clearml import Dataset
@@ -94,7 +94,7 @@ def step_three(dataset_project, dataset_name, dataset_root):
     print(f"Valid dataset uploaded with ID: {dataset.id}")
     return dataset.id 
  
-@PipelineDecorator.component(name="PreprocessAndUploadTrainData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['UploadRawValidData'],name="PreprocessAndUploadTrainData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
     #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
 
@@ -135,7 +135,7 @@ def preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset
 
     return processed_dataset.id
 
-@PipelineDecorator.component(name="PreprocessAndUploadTestData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['PreprocessAndUploadTrainData'],name="PreprocessAndUploadTestData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
     #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
 
@@ -177,7 +177,7 @@ def preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_n
     return processed_dataset.id
 
 
-@PipelineDecorator.component(name="PreprocessAndUploadValidData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['PreprocessAndUploadTestData'],name="PreprocessAndUploadValidData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def preprocess_and_upload_valid_data(raw_valid_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
     #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
 
@@ -220,7 +220,7 @@ def preprocess_and_upload_valid_data(raw_valid_dataset_id, dataset_root, dataset
 
 #end Preprocess Raw Data
 
-@PipelineDecorator.component(name="OptimizeHyperparameters", cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(parents=['PreprocessAndUploadValidData'],name="OptimizeHyperparameters", cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_id, output_root):
     import os
     import json
@@ -293,7 +293,7 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
         #cfg.DATASETS.ANNOTATIONS = True  # Include annotations in training data
         return cfg
 
-    def objective(trial, output_root):
+    def objective(trial):
         task = Task.create(project_name="BrainScan", task_name=f"HPOTrial{trial.number}", task_type=Task.TaskTypes.training)
         lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
         ims_per_batch = 2 #trial.suggest_categorical('ims_per_batch', [2, 4, 8, 16])
@@ -304,7 +304,7 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
         task.connect(cfg)
         trainer = DefaultTrainer(cfg)
         trainer.resume_or_load(resume=False)
-        evaluator = COCOEvaluator(dataset_name="brain_tumor_valid", output_dir=output_root)
+        evaluator = COCOEvaluator(dataset_name="BrainScanPreprocessedValidDataset", output_dir=output_root)
         trainer.test(cfg, trainer.model, evaluators=[evaluator])
         val_loss = trainer.test(cfg, trainer.model)
         if isinstance(val_loss, list):
@@ -327,7 +327,7 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
         register_dataset(name, id)
 
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=20, output_root=output_root)
+    study.optimize(objective, n_trials=20)
     best_hyperparams_path = f'{output_root}/best_hyperparams.yaml'
     with open(best_hyperparams_path, 'w') as file:
         yaml.dump(study.best_trial.params, file, default_flow_style=False)
@@ -341,7 +341,7 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
     print(f"Best hyperparameters: {study.best_trial.params}")
 
 
-@PipelineDecorator.component(name="TrainModel", return_values=['model'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(parents = ['PreprocessAndUploadValidData'],name="TrainModel", return_values=['model'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def train_model(train_dataset_id, valid_dataset_id, output_root):
     import os
     import json
@@ -454,7 +454,7 @@ def train_model(train_dataset_id, valid_dataset_id, output_root):
 # required packages for the pipeline execution step
 # Specifying `return_values` makes sure the function step can return an object to the pipeline logic
 # In this case, the returned object will be stored as an artifact named "accuracy"
-@PipelineDecorator.component(name="EvaluateModel",return_values=["accuracy"], cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
+@PipelineDecorator.component(parents=['TrainModel'],name="EvaluateModel",return_values=["accuracy"], cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
 def evaluate_model(valid_dataset_id, output_root):
     from sklearn.linear_model import LogisticRegression  # noqa
     from sklearn.metrics import accuracy_score
@@ -625,7 +625,7 @@ def evaluate_model(valid_dataset_id, output_root):
 
     print("Evaluating model")
 
-@PipelineDecorator.component(name="TestModel", cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
+@PipelineDecorator.component(parents=['EvaluateModel'],name="TestModel", cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
 def test_model(test_dataset_id, output_root):
     from clearml import Task
     from detectron2.evaluation import COCOEvaluator, inference_on_dataset
@@ -772,7 +772,7 @@ def test_model(test_dataset_id, output_root):
     create_predictions(dataset_dicts, my_dataset_test_metadata, seed=51, image_scale=1)
 
   
-@PipelineDecorator.component(name="UploadModel", cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['TestModel'],name="UploadModel", cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def upload_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name):
 
     import argparse
@@ -959,33 +959,31 @@ def executing_pipeline(dataset_project, dataset_name, dataset_root, processed_da
     print("::=======================================::")
     raw_train_dataset_id = step_one(dataset_project, dataset_name, dataset_root)
 
-    print("::=======================================::")
-    print("Step 2: Launch PreprocessAndUploadTrainDataset Task")
-    print("::=======================================::")
-    processed_train_dataset_id = preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg)
-
     # Use the returned data from the first step (`step_one`), and pass it to the next step (`step_two`)
     # Notice! unless we actually access the `data_frame` object,
     # the pipeline logic does not actually load the artifact itself.
     # When actually passing the `data_frame` object into a new step,
     # It waits for the creating step/function (`step_one`) to complete the execution
     print("::=======================================::")
-    print("Step 3: Launch PreprocessRawDataset Task")
+    print("Step 2: Launch PreprocessRawDataset Task")
     print("::=======================================::")
     raw_test_dataset_id = step_two(dataset_project, dataset_name, dataset_root)
     
-
     print("::=======================================::")
-    print("Step 4: Launch PreprocessAndUploadTestDataset Task")
-    print("::=======================================::")
-    processed_test_dataset_id = preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg)
-
-    print("::=======================================::")
-    print("Step 5: Launch TrainModel Task")
+    print("Step 3: Launch TrainModel Task")
     print("::=======================================::")
     raw_valid_dataset_id = step_three(dataset_project, dataset_name, dataset_root)
 
-    
+    print("::=======================================::")
+    print("Step 4: Launch PreprocessAndUploadTrainDataset Task")
+    print("::=======================================::")
+    processed_train_dataset_id = preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg)
+
+    print("::=======================================::")
+    print("Step 5: Launch PreprocessAndUploadTestDataset Task")
+    print("::=======================================::")
+    processed_test_dataset_id = preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg)
+
     print("::=======================================::")
     print("Step 6 Launch PreprocessAndUploadValidDataset Task")
     print("::=======================================::")

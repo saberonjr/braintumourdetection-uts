@@ -15,6 +15,7 @@ from clearml import Dataset, Task, TaskTypes
 from clearml.automation.controller import PipelineDecorator
 from detectron2.data import DatasetMapper, DatasetCatalog, MetadataCatalog, build_detection_test_loader
 from detectron2.data.transforms import Transform, apply_transform_gens, AugInput, Resize, RandomFlip, RandomRotation
+from detectron2.structures import BoxMode
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.checkpoint import Checkpointer
 from detectron2.engine import DefaultTrainer, DefaultPredictor
@@ -26,201 +27,7 @@ from sklearn.linear_model import LogisticRegression  # noqa
 from sklearn.metrics import accuracy_score
 
 
-# Make the following function an independent pipeline component step
-# notice all package imports inside the function will be automatically logged as
-# required packages for the pipeline execution step
-@PipelineDecorator.component(name="UploadRawTrainData", return_values=["train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_one(dataset_project, dataset_name, dataset_root):
-    import os
-    from clearml import Dataset
-
-    dir = os.path.join(dataset_root,"train")
-    annotations_file = os.path.join(dir, "_annotations.coco.json")
-    dataset = Dataset.create(
-        dataset_name=f"{dataset_name}RawTrainData", dataset_project=dataset_project
-    )
-    dataset.add_files(path=dir, wildcard="*.jpg")
-    if os.path.exists(annotations_file):
-        dataset.add_files(annotations_file)
-
-    dataset.upload()
-    dataset.finalize()
-    print(f"Train dataset uploaded with ID: {dataset.id}")
-    return dataset.id 
-    
-@PipelineDecorator.component(parents=['UploadRawTrainData'],  name="UploadRawTestData", return_values=["test_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_two(dataset_project, dataset_name, dataset_root):
-    import os
-    from clearml import Dataset
-
-    dir = os.path.join(dataset_root,"test")
-    annotations_file = os.path.join(dir, "_annotations.coco.json")
-
-    dataset = Dataset.create(
-       dataset_name=f"{dataset_name}RawTestData", dataset_project=dataset_project
-    )
-
-    dataset.add_files(path=dir, wildcard="*.jpg")
-
-    if os.path.exists(annotations_file):
-       dataset.add_files(annotations_file)
-
-    dataset.upload()
-    dataset.finalize()
-
-    print(f"Test dataset uploaded with ID: {dataset.id}")
-    return dataset.id 
-    
-@PipelineDecorator.component(parents=['UploadRawTrainData'],name="UploadRawValidData", return_values=["valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_three(dataset_project, dataset_name, dataset_root):
-    import os
-    from clearml import Dataset
-
-    dir = os.path.join(dataset_root,"valid")
-    annotations_file = os.path.join(dir, "_annotations.coco.json")
-
-    dataset = Dataset.create(
-        dataset_name=f"{dataset_name}RawValidData", dataset_project=dataset_project
-    )
-
-    dataset.add_files(path=dir, wildcard="*.jpg")
-
-    if os.path.exists(annotations_file):
-        dataset.add_files(annotations_file)
-
-    dataset.upload()
-    dataset.finalize()
-
-    print(f"Valid dataset uploaded with ID: {dataset.id}")
-    return dataset.id 
- 
-@PipelineDecorator.component(parents=['UploadRawTrainData'],name="PreprocessAndUploadTrainData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
-    #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
-
-    coco_path = f'{dataset_root}/train/_annotations.coco.json'
-    coco = COCO(coco_path)
-    processed_images_dir = os.path.join(f'{processed_dataset_root}', 'train')
-    os.makedirs(processed_images_dir, exist_ok=True)
-
-    for img_info in coco.dataset['images']:
-        image_path = os.path.join(f'{dataset_root}/train', img_info['file_name'])
-        image = cv2.imread(image_path)
-        #=====
-        #image = process_image(image, cfg)  # Assume process_image applies necessary transforms        
-        aug_input = AugInput(image)
-        aug_list = [
-            Resize(shape=(640, 640)),
-            RandomFlip(prob=0.5),
-            RandomRotation(angle=[-4, 4], expand=False, sample_style='range'),
-            #GaussianBlurTransform(5),
-            #AddGaussianNoiseTransform(25)
-        ]
-        aug_input, _ = apply_transform_gens(aug_list, aug_input)
-        image = aug_input.image
-        #=====
-        processed_image_path = os.path.join(processed_images_dir, f"{img_info['id']:012d}.jpg")
-        cv2.imwrite(processed_image_path, image)
-
-    # Save the merged annotations to a JSON file
-    annotations_path = os.path.join(processed_images_dir, '_annotations.coco.json')
-    with open(annotations_path, 'w') as f:
-        json.dump(coco.dataset, f)    
-
-    # Initialize ClearML task only now and upload processed data
-    processed_dataset = Dataset.create(dataset_name="BrainScanPreprocessedTrainDataset", dataset_project="BrainScan", parent_datasets= [raw_train_dataset_id])
-    processed_dataset.add_files(processed_images_dir)
-    processed_dataset.upload()
-    processed_dataset.finalize()    
-
-    return processed_dataset.id
-
-@PipelineDecorator.component(parents=['UploadRawTestData'],name="PreprocessAndUploadTestData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
-    #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
-
-    coco_path = f'{dataset_root}/test/_annotations.coco.json'
-    coco = COCO(coco_path)
-    processed_images_dir = os.path.join(f'{processed_dataset_root}', 'test')
-    os.makedirs(processed_images_dir, exist_ok=True)
-
-    for img_info in coco.dataset['images']:
-        image_path = os.path.join(f'{dataset_root}/test', img_info['file_name'])
-        image = cv2.imread(image_path)
-        #=====
-        #image = process_image(image, cfg)  # Assume process_image applies necessary transforms        
-        aug_input = AugInput(image)
-        aug_list = [
-            Resize(shape=(640, 640)),
-            RandomFlip(prob=0.5),
-            RandomRotation(angle=[-4, 4], expand=False, sample_style='range'),
-            #GaussianBlurTransform(5),
-            #AddGaussianNoiseTransform(25)
-        ]
-        aug_input, _ = apply_transform_gens(aug_list, aug_input)
-        image = aug_input.image
-        #=====
-        processed_image_path = os.path.join(processed_images_dir, f"{img_info['id']:012d}.jpg")
-        cv2.imwrite(processed_image_path, image)
-
-    # Save the merged annotations to a JSON file
-    annotations_path = os.path.join(processed_images_dir, '_annotations.coco.json')
-    with open(annotations_path, 'w') as f:
-        json.dump(coco.dataset, f)    
-
-    # Initialize ClearML task only now and upload processed data
-    processed_dataset = Dataset.create(dataset_name="BrainScanPreprocessedTestDataset", dataset_project="BrainScan", parent_datasets= [raw_test_dataset_id])
-    processed_dataset.add_files(processed_images_dir)
-    processed_dataset.upload()
-    processed_dataset.finalize()    
-
-    return processed_dataset.id
-
-
-@PipelineDecorator.component(parents=['UploadRawValidData'],name="PreprocessAndUploadValidData", return_values=["preprocessed_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def preprocess_and_upload_valid_data(raw_valid_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg):
-    #from image_transforms import GaussianBlurTransform, AddGaussianNoiseTransform
-
-    coco_path = f'{dataset_root}/valid/_annotations.coco.json'
-    coco = COCO(coco_path)
-    processed_images_dir = os.path.join(f'{processed_dataset_root}', 'valid')
-    os.makedirs(processed_images_dir, exist_ok=True)
-
-    for img_info in coco.dataset['images']:
-        image_path = os.path.join(f'{dataset_root}/valid', img_info['file_name'])
-        image = cv2.imread(image_path)
-        #=====
-        #image = process_image(image, cfg)  # Assume process_image applies necessary transforms        
-        aug_input = AugInput(image)
-        aug_list = [
-            Resize(shape=(640, 640)),
-            RandomFlip(prob=0.5),
-            RandomRotation(angle=[-4, 4], expand=False, sample_style='range'),
-            #GaussianBlurTransform(5),
-            #AddGaussianNoiseTransform(25)
-        ]
-        aug_input, _ = apply_transform_gens(aug_list, aug_input)
-        image = aug_input.image
-        #=====
-        processed_image_path = os.path.join(processed_images_dir, f"{img_info['id']:012d}.jpg")
-        cv2.imwrite(processed_image_path, image)
-
-    # Save the merged annotations to a JSON file
-    annotations_path = os.path.join(processed_images_dir, '_annotations.coco.json')
-    with open(annotations_path, 'w') as f:
-        json.dump(coco.dataset, f)    
-
-    # Initialize ClearML task only now and upload processed data
-    processed_dataset = Dataset.create(dataset_name="BrainScanPreprocessedValidDataset", dataset_project="BrainScan", parent_datasets= [raw_valid_dataset_id])
-    processed_dataset.add_files(processed_images_dir)
-    processed_dataset.upload()
-    processed_dataset.finalize()    
-
-    return processed_dataset.id
-
-#end Preprocess Raw Data
-
-@PipelineDecorator.component(parents=['PreprocessAndUploadTrainData', 'PreprocessAndUploadTestData', 'PreprocessAndUploadValidData'],name="OptimizeHyperparameters", cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(name="OptimizeHyperparameters", return_values=['task_id'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_id, output_root):
     import os
     import json
@@ -270,7 +77,7 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
         def loader():
             return get_dataset_dicts(dataset_id)
         DatasetCatalog.register(dataset_name, loader)
-        MetadataCatalog.get(dataset_name).set(thing_classes=["Tumor", "Non-Tumor"])  # Update if more classes
+        MetadataCatalog.get(dataset_name).set(thing_classes=["Tumour", "Non-Tumour"])  # Update if more classes
 
     def setup_cfg(lr, ims_per_batch, max_iter, momentum, weight_decay, output_root):
         cfg = get_cfg()
@@ -288,8 +95,8 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 512
         cfg.OUTPUT_DIR = output_root
         os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-        #cfg.MODEL.DEVICE = 'cpu'  # Use CPU for training
-        cfg.MODEL.DEVICE = 'cuda'
+        cfg.MODEL.DEVICE = 'cpu'  # Use CPU for training
+        #cfg.MODEL.DEVICE = 'cuda'
         #cfg.DATASETS.ANNOTATIONS = True  # Include annotations in training data
         return cfg
 
@@ -336,13 +143,15 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
         yaml.dump(study.trials_dataframe().to_dict(), file, default_flow_style=False)
     task.upload_artifact('best_hyperparameters', best_hyperparams_path)
     task.upload_artifact('study_summary', all_trials_path)
-    task.close()
+    
     print(f"Best trial: {study.best_trial.number}")
     print(f"Best hyperparameters: {study.best_trial.params}")
 
+    return task.id
 
-@PipelineDecorator.component(parents = ['OptimizeHyperparameters'],name="TrainModel", return_values=['model'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
-def train_model(train_dataset_id, valid_dataset_id, output_root):
+
+@PipelineDecorator.component(parents = ['OptimizeHyperparameters'],name="TrainModel", return_values=['task_id'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+def train_model(optimize_hyperparameter_task_id, train_dataset_id, valid_dataset_id, output_root):
     import os
     import json
     import yaml
@@ -351,6 +160,7 @@ def train_model(train_dataset_id, valid_dataset_id, output_root):
     from detectron2.engine import DefaultTrainer, DefaultPredictor
     from detectron2.config import get_cfg
     from detectron2 import model_zoo
+    from detectron2.structures import BoxMode
     #from registering_preprocessed_datasets import register_dataset
     import pickle
     from detectron2.checkpoint import Checkpointer
@@ -425,8 +235,8 @@ def train_model(train_dataset_id, valid_dataset_id, output_root):
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 512
     cfg.OUTPUT_DIR = output_root
     os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-    #cfg.MODEL.DEVICE = 'cpu'  # Use CPU for training
-    cfg.MODEL.DEVICE = 'cuda'
+    cfg.MODEL.DEVICE = 'cpu'  # Use CPU for training
+    #cfg.MODEL.DEVICE = 'cuda'
     #cfg.DATASETS.ANNOTATIONS = True  # Include annotations in training data
     
     # Train the model
@@ -443,19 +253,20 @@ def train_model(train_dataset_id, valid_dataset_id, output_root):
     cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = THRESHOLD
     #predictor = DefaultPredictor(cfg)
-    with open("cfg.pkl", "wb") as f:
+    
+    with open(f'{output_root}/cfg.pkl', "wb") as f:
         pickle.dump(cfg, f)
 
     task.upload_artifact('trained_model', model_path)
-    
+    return task.id
 
 # Make the following function an independent pipeline component step
 # notice all package imports inside the function will be automatically logged as
 # required packages for the pipeline execution step
 # Specifying `return_values` makes sure the function step can return an object to the pipeline logic
 # In this case, the returned object will be stored as an artifact named "accuracy"
-@PipelineDecorator.component(parents=['TrainModel'],name="EvaluateModel",return_values=["accuracy"], cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
-def evaluate_model(valid_dataset_id, output_root):
+@PipelineDecorator.component(parents=['TrainModel'],name="EvaluateModel",return_values=["task_id"], cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
+def evaluate_model(train_model_task_id, valid_dataset_id, output_root):
     from sklearn.linear_model import LogisticRegression  # noqa
     from sklearn.metrics import accuracy_score
 
@@ -467,6 +278,7 @@ def evaluate_model(valid_dataset_id, output_root):
     import matplotlib.pyplot as plt
     import cv2    
     import torch
+    from detectron2.structures import BoxMode
     from clearml import Task
     from detectron2.evaluation import COCOEvaluator, inference_on_dataset
     from detectron2.data import build_detection_test_loader, DatasetCatalog, MetadataCatalog
@@ -519,7 +331,7 @@ def evaluate_model(valid_dataset_id, output_root):
     register_dataset("BrainScanPreprocessedValidDataset", valid_dataset_id)
 
     # Load the saved config
-    with open("cfg.pkl", "rb") as f:
+    with open(f'{output_root}/cfg.pkl', "rb") as f:
         cfg = pickle.load(f)
 
     # Set the device to GPU
@@ -540,7 +352,7 @@ def evaluate_model(valid_dataset_id, output_root):
     inference_on_dataset(predictor.model, test_loader, evaluator)
 
     # Upload the evaluation results to ClearML
-    task = Task.get_task()
+    task = Task.current_task()
     task.upload_artifact("evaluation_results", os.path.join(output_dir, "coco_instances_results.json"))
 
     # Visualize the predictions
@@ -590,7 +402,7 @@ def evaluate_model(valid_dataset_id, output_root):
         fig.tight_layout()
         plt.savefig(os.path.join(output_dir, f'prediction_{seed}_original.png'))
 
-        task = Task.get_task()
+        task = Task.current_task()
 
         # Create a report
         report = {
@@ -614,7 +426,7 @@ def evaluate_model(valid_dataset_id, output_root):
             html_report += '<h2>{title}</h2><img src="{image}">'.format(**image)
 
         # Upload the report as an HTML file
-        with open('report.html', 'w') as f:
+        with open(f'{output_root}/report.html', 'w') as f:
             f.write(html_report)
         task.upload_artifact('report.html', 'report.html')
         # Upload the report
@@ -625,7 +437,9 @@ def evaluate_model(valid_dataset_id, output_root):
 
     print("Evaluating model")
 
-@PipelineDecorator.component(parents=['EvaluateModel'],name="TestModel", cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
+    return task.id
+
+@PipelineDecorator.component(parents=['EvaluateModel'],name="TestModel", return_values=['task_id'], cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
 def test_model(test_dataset_id, output_root):
     from clearml import Task
     from detectron2.evaluation import COCOEvaluator, inference_on_dataset
@@ -634,6 +448,7 @@ def test_model(test_dataset_id, output_root):
     from detectron2.utils.visualizer import ColorMode
     from detectron2.data import DatasetCatalog, MetadataCatalog
     from detectron2.utils.visualizer import Visualizer
+    from detectron2.structures import BoxMode
     import pickle
     import numpy as np
     import matplotlib.pyplot as plt
@@ -676,7 +491,7 @@ def test_model(test_dataset_id, output_root):
         def loader():
             return get_dataset_dicts(dataset_id)
         DatasetCatalog.register(dataset_name, loader)
-        MetadataCatalog.get(dataset_name).set(thing_classes=["Tumou", "Non-Tumour"])  # Update if more classes
+        MetadataCatalog.get(dataset_name).set(thing_classes=["Tumour", "Non-Tumour"])  # Update if more classes
 
 
     task = Task.init(project_name='BrainScan', task_name='TestModel', task_type=Task.TaskTypes.testing)
@@ -684,7 +499,7 @@ def test_model(test_dataset_id, output_root):
     register_dataset("BrainScanPreprocessedTestDataset",  test_dataset_id)
 
     # Load the saved config
-    with open("cfg.pkl", "rb") as f:
+    with open(f'{output_root}/cfg.pkl', "rb") as f:
         cfg = pickle.load(f)
 
     # Create a predictor
@@ -764,15 +579,15 @@ def test_model(test_dataset_id, output_root):
             html_report += '<h2>{title}</h2><img src="{image}">'.format(**image)
 
         # Upload the report as an HTML file
-        with open('report.html', 'w') as f:
+        with open(f'{output_root}/report.html', 'w') as f:
             f.write(html_report)
         task.upload_artifact('report.html', 'report.html')
     
     create_predictions(dataset_dicts, my_dataset_test_metadata, seed=154, image_scale=1)
     create_predictions(dataset_dicts, my_dataset_test_metadata, seed=51, image_scale=1)
-
+    return task.id
   
-@PipelineDecorator.component(parents=['EvaluateModel'],name="UploadModel", cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(parents=['TestModel'],name="UploadModel", cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def upload_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name):
 
     import argparse
@@ -946,79 +761,44 @@ def upload_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
     finally:
         cleanup_repo(repo_path)  # Ensure cleanup happens even if an error occurs
 
-# The actual pipeline execution context
-# notice that all pipeline component function calls are actually executed remotely
-# Only when a return value is used, the pipeline logic will wait for the component execution to complete
-@PipelineDecorator.pipeline(name="BrainScanPipeline", project="Strykers", target_project="Strykers", pipeline_execution_queue="default", default_queue="default") #, version="0.0.6")
-def executing_pipeline(dataset_project, dataset_name, dataset_root, processed_dataset_name, processed_dataset_root, output_root, cfg):
-    #print("pipeline args:", pickle_url, mock_parameter)
+@PipelineDecorator.pipeline(name="BrainScanModelPipeline", project="Strykers", target_project="Strykers", pipeline_execution_queue="default", default_queue="default") #, version="0.0.6")
+def executing_model_pipeline(dataset_project, dataset_name, dataset_root, processed_dataset_name, processed_dataset_root, output_root, cfg):
 
-    # Use the pipeline argument to start the pipeline and pass it ot the first step
-    print("::=======================================::")
-    print("Step1: Launch UploadTrainRawDataset Task")
-    print("::=======================================::")
-    raw_train_dataset_id = step_one(dataset_project, dataset_name, dataset_root)
-
-    # Use the returned data from the first step (`step_one`), and pass it to the next step (`step_two`)
-    # Notice! unless we actually access the `data_frame` object,
-    # the pipeline logic does not actually load the artifact itself.
-    # When actually passing the `data_frame` object into a new step,
-    # It waits for the creating step/function (`step_one`) to complete the execution
-    print("::=======================================::")
-    print("Step 2: Launch PreprocessRawDataset Task")
-    print("::=======================================::")
-    raw_test_dataset_id = step_two(dataset_project, dataset_name, dataset_root)
-    
-    print("::=======================================::")
-    print("Step 3: Launch TrainModel Task")
-    print("::=======================================::")
-    raw_valid_dataset_id = step_three(dataset_project, dataset_name, dataset_root)
+    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTrainData")
+    #params = task.get_parameters()
+    processed_train_dataset_id = "28d6a635f7024230b43fa49c6090b0c9" # params["preprocessed_train_dataset_id"]
+    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadValidData")
+    #params = task.get_parameters()
+    processed_valid_dataset_id = "f5d540186c0840aeab4adb8ba988fea5" #params["preprocessed_valid_dataset_id"]   
+    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTestData")
+    #params = task.get_parameters()
+    processed_test_dataset_id = "fb029e94b2294f8e803dcce3dd01571c"# params["preprocessed_test_dataset_id"]
 
     print("::=======================================::")
-    print("Step 4: Launch PreprocessAndUploadTrainDataset Task")
+    print("Step 1. Launch OptimizeHyperparameters Task")
     print("::=======================================::")
-    processed_train_dataset_id = preprocess_and_upload_train_data(raw_train_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg)
+    #optimize_hyperparameter_task_id = optimize_hyperparameters(processed_train_dataset_id, processed_valid_dataset_id, processed_test_dataset_id, output_root)
+    optimize_hyperparameter_task_id = "4242342342424234234fsdfsdf"
 
     print("::=======================================::")
-    print("Step 5: Launch PreprocessAndUploadTestDataset Task")
+    print("Step 2. Launch TrainModel Task")
     print("::=======================================::")
-    processed_test_dataset_id = preprocess_and_upload_test_data(raw_test_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg)
+    train_model_task_id = train_model(optimize_hyperparameter_task_id, processed_train_dataset_id, processed_valid_dataset_id, output_root)
 
     print("::=======================================::")
-    print("Step 6 Launch PreprocessAndUploadValidDataset Task")
+    print("Step 3. Launch EvaluateModel Task")
     print("::=======================================::")
-    processed_valid_dataset_id = preprocess_and_upload_valid_data(raw_valid_dataset_id, dataset_root, dataset_name, processed_dataset_root, cfg)
+    evaluate_model_task_id = evaluate_model(train_model_task_id, processed_valid_dataset_id, output_root)
 
     print("::=======================================::")
-    print("Step 7. Launch OptimizeHyperparameters Task")
+    print("Step 4. Launch TestModel Task")
     print("::=======================================::")
-    optimize_hyperparameters(processed_train_dataset_id, processed_valid_dataset_id, processed_test_dataset_id, output_root)
-    # Notice since we are "printing" the `model` object,
-    # we actually deserialize the object from the third step, and thus wait for the third step to complete.
-    #print("returned model: {}".format(model))
-    print("::=======================================::")
-    print("Step 8. Launch TrainModel Task")
-    print("::=======================================::")
-    train_model(processed_train_dataset_id, processed_valid_dataset_id, output_root)
+    test_model_task_id = test_model(evaluate_model_task_id, processed_test_dataset_id, output_root)
 
     print("::=======================================::")
-    print("Step 9. Launch EvaluateModel Task")
+    print("Step 5. Launch UploadModel Task")
     print("::=======================================::")
-    evaluate_model(processed_valid_dataset_id, output_root)
-
-    print("::=======================================::")
-    print("Step 10. Launch TestModel Task")
-    print("::=======================================::")
-    test_model(processed_test_dataset_id, output_root)
-
-    # Notice since we are "printing" the `accuracy` object,
-    # we actually deserialize the object from the fourth step, and thus wait for the fourth step to complete.
-    #print(f"Accuracy={accuracy}%")
-
-    print("::=======================================::")
-    print("Step 11. Launch UploadModel Task")
-    print("::=======================================::")
-    #upload_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
+    #upload_model(test_model_task_id, model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
 
 
 if __name__ == "__main__":
@@ -1045,7 +825,7 @@ if __name__ == "__main__":
 
     cfg = setup_cfg()
 
-    executing_pipeline(
+    executing_model_pipeline(
         dataset_project="BrainScan",
         dataset_name="BrainScan",
         dataset_root="/Users/roysaberon/Developer/GitHub/braintumourdetection/Dataset",

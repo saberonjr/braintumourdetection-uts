@@ -764,21 +764,21 @@ def upload_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
 @PipelineDecorator.pipeline(name="BrainScanModelPipeline", project="Strykers", target_project="Strykers", pipeline_execution_queue="default", default_queue="default") #, version="0.0.6")
 def executing_model_pipeline(dataset_project, dataset_name, dataset_root, processed_dataset_name, processed_dataset_root, output_root, cfg):
 
-    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTrainData")
-    #params = task.get_parameters()
-    processed_train_dataset_id = "28d6a635f7024230b43fa49c6090b0c9" # params["preprocessed_train_dataset_id"]
-    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadValidData")
-    #params = task.get_parameters()
-    processed_valid_dataset_id = "f5d540186c0840aeab4adb8ba988fea5" #params["preprocessed_valid_dataset_id"]   
-    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTestData")
-    #params = task.get_parameters()
-    processed_test_dataset_id = "fb029e94b2294f8e803dcce3dd01571c"# params["preprocessed_test_dataset_id"]
+    task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTrainData")
+    params = task.get_parameters()
+    #processed_train_dataset_id = "28d6a635f7024230b43fa49c6090b0c9" # params["preprocessed_train_dataset_id"]
+    task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadValidData")
+    params = task.get_parameters()
+    #processed_valid_dataset_id = "f5d540186c0840aeab4adb8ba988fea5" #params["preprocessed_valid_dataset_id"]   
+    task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTestData")
+    params = task.get_parameters()
+    #processed_test_dataset_id = "fb029e94b2294f8e803dcce3dd01571c"# params["preprocessed_test_dataset_id"]
 
     print("::=======================================::")
     print("Step 1. Launch OptimizeHyperparameters Task")
     print("::=======================================::")
-    #optimize_hyperparameter_task_id = optimize_hyperparameters(processed_train_dataset_id, processed_valid_dataset_id, processed_test_dataset_id, output_root)
-    optimize_hyperparameter_task_id = "4242342342424234234fsdfsdf"
+    optimize_hyperparameter_task_id = optimize_hyperparameters(processed_train_dataset_id, processed_valid_dataset_id, processed_test_dataset_id, output_root)
+    #optimize_hyperparameter_task_id = "4242342342424234234fsdfsdf"
 
     print("::=======================================::")
     print("Step 2. Launch TrainModel Task")
@@ -798,7 +798,7 @@ def executing_model_pipeline(dataset_project, dataset_name, dataset_root, proces
     print("::=======================================::")
     print("Step 5. Launch UploadModel Task")
     print("::=======================================::")
-    #upload_model(test_model_task_id, model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
+    upload_model(test_model_task_id, model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
 
 
 if __name__ == "__main__":

@@ -122,7 +122,7 @@ def main():
         # Upload the report as an HTML file
         with open('report.html', 'w') as f:
             f.write(html_report)
-        task.upload_artifact('report.html', 'report.html')
+        task.upload_artifact('report.html', report.html)
         # Upload the report
         #task.upload_report(report)
 

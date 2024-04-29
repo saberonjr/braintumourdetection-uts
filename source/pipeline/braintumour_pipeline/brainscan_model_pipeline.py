@@ -151,7 +151,7 @@ def optimize_hyperparameters(train_dataset_id, valid_dataset_id, test_dataaset_i
 
 
 @PipelineDecorator.component(parents = ['OptimizeHyperparameters'],name="TrainModel", return_values=['task_id'], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
-def train_model(optimize_hyperparameter_task_id, train_dataset_id, valid_dataset_id, output_root):
+def train_model(optimize_hyperparameter_task_id, train_dataset_id, valid_dataset_id, test_dataset_id, output_root):
     import os
     import json
     import yaml
@@ -214,6 +214,7 @@ def train_model(optimize_hyperparameter_task_id, train_dataset_id, valid_dataset
     # Register the dataset
     register_dataset("BrainScanPreprocessedTrainDataset", train_dataset_id)
     register_dataset("BrainScanPreprocessedValidDataset", valid_dataset_id)
+    register_dataset("BrainScanPreprocessedTestDataset", test_dataset_id)
    
     # Load the best hyperparameters from the HPO script
     with open(f'{output_root}/best_hyperparams.yaml', 'r') as file:
@@ -266,7 +267,7 @@ def train_model(optimize_hyperparameter_task_id, train_dataset_id, valid_dataset
 # Specifying `return_values` makes sure the function step can return an object to the pipeline logic
 # In this case, the returned object will be stored as an artifact named "accuracy"
 @PipelineDecorator.component(parents=['TrainModel'],name="EvaluateModel",return_values=["task_id"], cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
-def evaluate_model(train_model_task_id, valid_dataset_id, output_root):
+def evaluate_model(train_model_task_id, test_dataset_id, valid_dataset_id, output_root):
     from sklearn.linear_model import LogisticRegression  # noqa
     from sklearn.metrics import accuracy_score
 
@@ -322,13 +323,14 @@ def evaluate_model(train_model_task_id, valid_dataset_id, output_root):
         def loader():
             return get_dataset_dicts(dataset_id)
         DatasetCatalog.register(dataset_name, loader)
-        MetadataCatalog.get(dataset_name).set(thing_classes=["Tumor", "Non-Tumor"])  # Update if more classes
+        MetadataCatalog.get(dataset_name).set(thing_classes=["Tumour", "Non-Tumour"])  # Update if more classes
 
 
     SEED = 99
     THRESHOLD = 0.6    
     
     register_dataset("BrainScanPreprocessedValidDataset", valid_dataset_id)
+    register_dataset("BrainScanPreprocessedTestDataset", test_dataset_id)
 
     # Load the saved config
     with open(f'{output_root}/cfg.pkl', "rb") as f:
@@ -428,7 +430,7 @@ def evaluate_model(train_model_task_id, valid_dataset_id, output_root):
         # Upload the report as an HTML file
         with open(f'{output_root}/report.html', 'w') as f:
             f.write(html_report)
-        task.upload_artifact('report.html', 'report.html')
+        task.upload_artifact('report.html', html_report)
         # Upload the report
         #task.upload_report(report)
 
@@ -440,7 +442,7 @@ def evaluate_model(train_model_task_id, valid_dataset_id, output_root):
     return task.id
 
 @PipelineDecorator.component(parents=['EvaluateModel'],name="TestModel", return_values=['task_id'], cache=True, task_type=TaskTypes.qc)#, execution_queue="default")
-def test_model(test_dataset_id, output_root):
+def test_model(evaluate_model_task_id, test_dataset_id, output_root):
     from clearml import Task
     from detectron2.evaluation import COCOEvaluator, inference_on_dataset
     from detectron2.data import build_detection_test_loader
@@ -505,7 +507,7 @@ def test_model(test_dataset_id, output_root):
     # Create a predictor
     predictor = DefaultPredictor(cfg)
 
-    output_dir=output_dir
+    output_dir=output_root
     # Create a COCO evaluator
     evaluator = COCOEvaluator("BrainScanPreprocessedTestDataset", False, output_dir=output_dir)
 
@@ -581,7 +583,7 @@ def test_model(test_dataset_id, output_root):
         # Upload the report as an HTML file
         with open(f'{output_root}/report.html', 'w') as f:
             f.write(html_report)
-        task.upload_artifact('report.html', 'report.html')
+        task.upload_artifact('report.html', html_report)
     
     create_predictions(dataset_dicts, my_dataset_test_metadata, seed=154, image_scale=1)
     create_predictions(dataset_dicts, my_dataset_test_metadata, seed=51, image_scale=1)
@@ -764,31 +766,31 @@ def upload_model(model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
 @PipelineDecorator.pipeline(name="BrainScanModelPipeline", project="Strykers", target_project="Strykers", pipeline_execution_queue="default", default_queue="default") #, version="0.0.6")
 def executing_model_pipeline(dataset_project, dataset_name, dataset_root, processed_dataset_name, processed_dataset_root, output_root, cfg):
 
-    task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTrainData")
-    params = task.get_parameters()
-    #processed_train_dataset_id = "28d6a635f7024230b43fa49c6090b0c9" # params["preprocessed_train_dataset_id"]
-    task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadValidData")
-    params = task.get_parameters()
-    #processed_valid_dataset_id = "f5d540186c0840aeab4adb8ba988fea5" #params["preprocessed_valid_dataset_id"]   
-    task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTestData")
-    params = task.get_parameters()
-    #processed_test_dataset_id = "fb029e94b2294f8e803dcce3dd01571c"# params["preprocessed_test_dataset_id"]
+    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTrainData")
+    #params = task.get_parameters()
+    processed_train_dataset_id = "c3249b39ff7243fabff953851ccb297d" # params["preprocessed_train_dataset_id"]
+    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadValidData")
+    #params = task.get_parameters()
+    processed_valid_dataset_id = "93a57f9fab4842f796c91be9ad18c129" #params["preprocessed_valid_dataset_id"]   
+    #task = Task.init(project_name=dataset_project, task_name="PreprocessAndUploadTestData")
+    #params = task.get_parameters()
+    processed_test_dataset_id = "08ed95e86a5a4de686ce75834f4172ca"# params["preprocessed_test_dataset_id"]
 
     print("::=======================================::")
     print("Step 1. Launch OptimizeHyperparameters Task")
     print("::=======================================::")
-    optimize_hyperparameter_task_id = optimize_hyperparameters(processed_train_dataset_id, processed_valid_dataset_id, processed_test_dataset_id, output_root)
-    #optimize_hyperparameter_task_id = "4242342342424234234fsdfsdf"
+    #optimize_hyperparameter_task_id = optimize_hyperparameters(processed_train_dataset_id, processed_valid_dataset_id, processed_test_dataset_id, output_root)
+    optimize_hyperparameter_task_id = "654e2f17cc7e46bcb73e833ae6992c93"
 
     print("::=======================================::")
     print("Step 2. Launch TrainModel Task")
     print("::=======================================::")
-    train_model_task_id = train_model(optimize_hyperparameter_task_id, processed_train_dataset_id, processed_valid_dataset_id, output_root)
+    train_model_task_id = train_model(optimize_hyperparameter_task_id, processed_train_dataset_id, processed_valid_dataset_id, processed_test_dataset_id, output_root)
 
     print("::=======================================::")
     print("Step 3. Launch EvaluateModel Task")
     print("::=======================================::")
-    evaluate_model_task_id = evaluate_model(train_model_task_id, processed_valid_dataset_id, output_root)
+    evaluate_model_task_id = evaluate_model(train_model_task_id, processed_test_dataset_id, processed_valid_dataset_id, output_root)
 
     print("::=======================================::")
     print("Step 4. Launch TestModel Task")
@@ -798,7 +800,7 @@ def executing_model_pipeline(dataset_project, dataset_name, dataset_root, proces
     print("::=======================================::")
     print("Step 5. Launch UploadModel Task")
     print("::=======================================::")
-    upload_model(test_model_task_id, model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
+    #upload_model(test_model_task_id, model_id, env_path, REPO_URL, DEVELOPMENT_BRANCH, project_name)
 
 
 if __name__ == "__main__":
@@ -828,10 +830,10 @@ if __name__ == "__main__":
     executing_model_pipeline(
         dataset_project="BrainScan",
         dataset_name="BrainScan",
-        dataset_root="/Users/roysaberon/Developer/GitHub/braintumourdetection/Dataset",
-        processed_dataset_root="/Users/roysaberon/Downloads/BrainScan/preprocesseddata",
+        dataset_root="/Users/soterojrsaberon/Downloads/brainscan/Dataset",
+        processed_dataset_root="/Users/soterojrsaberon/Downloads/brainscan/preprocesseddata",
         processed_dataset_name="BrainScan",
-        output_root="/Users/roysaberon/Downloads/BrainScan/output",
+        output_root="/Users/soterojrsaberon/Downloads/brainscan/output",
         cfg=cfg                      
     )
 

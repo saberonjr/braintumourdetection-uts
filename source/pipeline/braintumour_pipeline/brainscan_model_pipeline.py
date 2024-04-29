@@ -507,7 +507,7 @@ def test_model(evaluate_model_task_id, test_dataset_id, output_root):
     # Create a predictor
     predictor = DefaultPredictor(cfg)
 
-    output_dir=output_dir
+    output_dir=output_root
     # Create a COCO evaluator
     evaluator = COCOEvaluator("BrainScanPreprocessedTestDataset", False, output_dir=output_dir)
 

@@ -1,0 +1,44 @@
+name: ClearML ML Model CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+    types: [assigned, opened, edited, reopened, synchronize]
+
+jobs:
+  train-and-monitor:
+    runs-on: ubuntu-20.04
+    env:
+      CLEARML_API_ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+      CLEARML_API_SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      CLEARML_API_HOST: ${{ secrets.CLEARML_API_HOST }}
+      CLEARML_WEB_HOST: ${{ secrets.CLEARML_WEB_HOST }}
+      CLEARML_FILES_HOST: ${{ secrets.CLEARML_FILES_HOST }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}  # Checkout the actual PR branch
+      - name: Set PR Number
+        run: echo "PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Launch Training Task and Capture Task ID
+        id: launch_task
+        run: |
+          TASK_ID=$(python launch_training_task.py "https://github.com/${{ github.repository }}" "${{ github.head_ref }}" "${{ github.event.pull_request.head.sha }}" | grep "TASK_ID_OUTPUT:" | cut -d ' ' -f 2)
+          echo "TASK_ID=$TASK_ID" >> $GITHUB_ENV
+          echo "Captured Task ID: $TASK_ID"
+
+      - name: Poll for Task Progress
+        run: |
+          python check_clearml_task_running.py ${{ env.TASK_ID }}
+
+      - name: Fetch Task Statistics and Create PR Comment
+        run: |
+          python create_stats_comment.py ${{ env.TASK_ID }}

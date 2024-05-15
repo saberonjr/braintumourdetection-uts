@@ -8,7 +8,14 @@ __pycache__/
 .vscode/
 Dataset/
 .DS_Store
-
+source/
+brainscan/*
+brainscan2/datasets/*
+brainscan2/runs/*
+brainscan2/datasets/brain-tumor/train/labels/
+brainscan2/datasets/brain-tumor/train/images/
+brainscan2/datasets/brain-tumor/valid/labels/
+brainscan2/datasets/brain-tumor/train/images/
 # Distribution / packaging
 .Python
 build/

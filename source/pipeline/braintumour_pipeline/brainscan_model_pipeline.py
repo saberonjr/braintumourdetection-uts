@@ -808,7 +808,7 @@ if __name__ == "__main__":
     PipelineDecorator.set_default_execution_queue('default')
     # Run the pipeline steps as subprocesses on the current machine, great for local executions
     # (for easy development / debugging, use `PipelineDecorator.debug_pipeline()` to execute steps as regular functions)
-    PipelineDecorator.run_locally()
+    #PipelineDecorator.run_locally()
     #PipelineDecorator.debug_pipeline()
     # Start the pipeline execution logic.
     def setup_cfg():

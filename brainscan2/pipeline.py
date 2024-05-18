@@ -373,16 +373,16 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     os.makedirs(f'{processed_dataset_root}/test/labels', exist_ok=True)
 
     for i, (img, lbl) in enumerate(zip(train_images, train_labels)):
-        cv2.imwrite(f'dataset/images/train/{i}.jpg', img)
-        np.savetxt(f'dataset/labels/train/{i}.txt', lbl, fmt='%f')
+        cv2.imwrite(f'{processed_dataset_root}/train/images/{i}.jpg', img)
+        np.savetxt(f'{processed_dataset_root}/train/labels/{i}.txt', lbl, fmt='%f')
 
     for i, (img, lbl) in enumerate(zip(valid_images, valid_labels)):
-        cv2.imwrite(f'dataset/images/val/{i}.jpg', img)
-        np.savetxt(f'dataset/labels/val/{i}.txt', lbl, fmt='%f')
+        cv2.imwrite(f'{processed_dataset_root}/valid/images/{i}.jpg', img)
+        np.savetxt(f'{processed_dataset_root}/valid/labels/{i}.txt', lbl, fmt='%f')
 
     for i, (img, lbl) in enumerate(zip(test_images, test_labels)):
-        cv2.imwrite(f'dataset/images/test/{i}.jpg', img)
-        np.savetxt(f'dataset/labels/test/{i}.txt', lbl, fmt='%f')
+        cv2.imwrite(f'{processed_dataset_root}/test/images/{i}.jpg', img)
+        np.savetxt(f'{processed_dataset_root}/test/labels/{i}.txt', lbl, fmt='%f')
 
     # Load a model
     model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)

@@ -414,7 +414,6 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
         'process_test_dataset_id': process_test_dataset_id
     })
 
-    task.close()
     return model_id
 
 

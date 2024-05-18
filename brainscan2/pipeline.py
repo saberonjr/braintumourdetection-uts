@@ -275,13 +275,13 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_
     raw_test_dataset_id = step_two_b(raw_train_dataset_id, dataset_project, dataset_name, dataset_root)
     
     
-    process_train_dataset_id = step_two_c(raw_train_dataset_id, dataset_project, dataset_name, dataset_root)
+    process_train_dataset_id = step_two_c(raw_train_dataset_id, dataset_project, dataset_name)
     
     
-    process_valid_dataset_id = step_three_a(raw_validation_dataset_id, dataset_name, dataset_root)
+    process_valid_dataset_id = step_three_a(raw_validation_dataset_id, dataset_name)
     
     
-    process_test_dataset_id = step_three_b(raw_test_dataset_id, dataset_name, dataset_root)
+    process_test_dataset_id = step_three_b(raw_test_dataset_id, dataset_name)
     
     
     step_four_id = step_four(process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_name, dataset_root)

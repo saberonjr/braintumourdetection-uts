@@ -331,9 +331,9 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root
     previous_task = Task.get_task(task_id=previous_task_id)
 
     # Retrieve the dataset IDs
-    process_train_dataset_id = previous_task.get_parameters()['process_train_dataset_id']
-    process_valid_dataset_id = previous_task.get_parameters()['process_valid_dataset_id']
-    process_test_dataset_id = previous_task.get_parameters()['process_test_dataset_id']
+    process_train_dataset_id = previous_task.get_parameters()['General/process_train_dataset_id']
+    process_valid_dataset_id = previous_task.get_parameters()['General/process_valid_dataset_id']
+    process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
 
     print(f"Train Dataset ID: {process_train_dataset_id}")
     print(f"Valid Dataset ID: {process_valid_dataset_id}")
@@ -358,6 +358,16 @@ def step_five(
 def step_six(
     base_task_id, queue_name
 ):
+    import argparse
+    import os
+
+    import numpy as np
+    from clearml import Dataset, Task
+
+    return "hpo_id"
+
+def testme(base_task_id, queue_name):
+
     import argparse
     import os
 
@@ -410,10 +420,6 @@ def step_six(
         min_iteration_per_job=15000,
         max_iteration_per_job=150000,
     )
-
-    return "hpo_id"
-
-def testme():
     # report every 12 seconds, this is way too often, but we are testing here J
     optimizer.set_report_period(0.2)
     # start the optimization process, callback function to be called every time an experiment is completed

@@ -157,7 +157,7 @@ def step_three_merge(
 
 @PipelineDecorator.component(name="TrainModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def step_four(
-    start_model_pipeline_id
+    start_model_pipeline_id, process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_name, dataset_root
 ):
     import argparse
     import os

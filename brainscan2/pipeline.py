@@ -140,8 +140,8 @@ def step_two_a(
     train_images, train_labels = load_dataset(mages_path, labels_path)
     
     # Save datasets as NumPy arrays
-    np.save("train_images.npy", train_images)
-    np.save("train_labels.npy", train_labels)
+    np.save("./processed/train_images.npy", train_images)
+    np.save("./processed/train_labels.npy", train_labels)
     
     # Create a new ClearML dataset for the NumPy files
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTrainDataset" , dataset_project=processed_dataset_project)
@@ -199,8 +199,8 @@ def step_two_b(
     valid_images, valid_labels = load_dataset(images_path, labels_path)
     
     # Save datasets as NumPy arrays
-    np.save("valid_images.npy", valid_images)
-    np.save("valid_labels.npy", valid_labels)
+    np.save("./processed/valid_images.npy", valid_images)
+    np.save("./processed/valid_labels.npy", valid_labels)
     
     # Create a new ClearML dataset for the NumPy files
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedValidDataset" , dataset_project=processed_dataset_project)
@@ -259,8 +259,8 @@ def step_two_c(
     test_images, test_labels = load_dataset(images_path, labels_path)
     
     # Save datasets as NumPy arrays
-    np.save("test_images.npy", test_images)
-    np.save("test_labels.npy", test_labels)
+    np.save("./processed/test_images.npy", test_images)
+    np.save("./processed/test_labels.npy", test_labels)
     
     # Create a new ClearML dataset for the NumPy files
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTestDataset" , dataset_project=processed_dataset_project)

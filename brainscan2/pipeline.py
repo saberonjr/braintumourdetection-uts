@@ -297,7 +297,7 @@ def step_two_c(
 
 
 
-@PipelineDecorator.component(name="MergeDataTasks", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(name="MergeDataTasks", return_values=["start_model_pipeline_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_three_merge(
      process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, processed_dataset_project, processed_dataset_name
 ):
@@ -317,14 +317,36 @@ def step_three_merge(
 
 
 
-@PipelineDecorator.component(name="TrainModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
-def step_four( start_model_pipeline_id, dataset_name, dataset_root
+@PipelineDecorator.component(name="TrainModel", return_values=["training_task_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root
 ):
     import argparse
     import os
-
+    from ultralytics import YOLO
     import numpy as np
     from clearml import Dataset, Task
+    import cv2
+
+    def load_numpy_datasets(train_dataset_id, valid_dataset_id, test_dataset_id):
+        # Fetch datasets
+        train_dataset = Dataset.get(dataset_id=train_dataset_id)
+        valid_dataset = Dataset.get(dataset_id=valid_dataset_id)
+        test_dataset = Dataset.get(dataset_id=test_dataset_id)
+
+        # Get the local paths for these datasets
+        train_dataset_path = train_dataset.get_local_copy()
+        valid_dataset_path = valid_dataset.get_local_copy()
+        test_dataset_path = test_dataset.get_local_copy()
+
+        # Load the NumPy arrays
+        train_images = np.load(os.path.join(train_dataset_path, "train_images.npy"))
+        train_labels = np.load(os.path.join(train_dataset_path, "train_labels.npy"))
+        valid_images = np.load(os.path.join(valid_dataset_path, "valid_images.npy"))
+        valid_labels = np.load(os.path.join(valid_dataset_path, "valid_labels.npy"))
+        test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
+        test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
+
+        return train_images, train_labels, valid_images, valid_labels, test_images, test_labels
 
     #Connect to the previous task and fetch the dataset IDs
     previous_task_id = start_model_pipeline_id
@@ -338,8 +360,37 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root
     print(f"Train Dataset ID: {process_train_dataset_id}")
     print(f"Valid Dataset ID: {process_valid_dataset_id}")
     print(f"Test Dataset ID: {process_test_dataset_id}")
+
+    # Load datasets
+    train_images, train_labels, valid_images, valid_labels, test_images, test_labels = load_numpy_datasets(
+        process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id)
     
-    return "trainmodelid"
+    os.makedirs(f'{processed_dataset_root}/train/images', exist_ok=True)
+    os.makedirs(f'{processed_dataset_root}/train/labels', exist_ok=True)
+    os.makedirs(f'{processed_dataset_root}/valid/images', exist_ok=True)
+    os.makedirs(f'{processed_dataset_root}/valid/labels', exist_ok=True)
+    os.makedirs(f'{processed_dataset_root}/test/images', exist_ok=True)
+    os.makedirs(f'{processed_dataset_root}/test/labels', exist_ok=True)
+
+    for i, (img, lbl) in enumerate(zip(train_images, train_labels)):
+        cv2.imwrite(f'dataset/images/train/{i}.jpg', img)
+        np.savetxt(f'dataset/labels/train/{i}.txt', lbl, fmt='%f')
+
+    for i, (img, lbl) in enumerate(zip(valid_images, valid_labels)):
+        cv2.imwrite(f'dataset/images/val/{i}.jpg', img)
+        np.savetxt(f'dataset/labels/val/{i}.txt', lbl, fmt='%f')
+
+    for i, (img, lbl) in enumerate(zip(test_images, test_labels)):
+        cv2.imwrite(f'dataset/images/test/{i}.jpg', img)
+        np.savetxt(f'dataset/labels/test/{i}.txt', lbl, fmt='%f')
+
+    # Load a model
+    model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
+
+    # Train the model
+    results = model.train(data='brainscan.yaml', epochs=100, imgsz=640)
+        
+    return Task.current_task.id
 
 
 @PipelineDecorator.component(name="EvaluateModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")

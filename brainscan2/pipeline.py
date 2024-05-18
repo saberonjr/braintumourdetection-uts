@@ -103,40 +103,181 @@ def step_one_c(start_task_id, dataset_project, dataset_name, dataset_root):
 
 @PipelineDecorator.component(name="ProcessTrainData", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_two_a(
-    raw_train_dataset_id, processed_dataset_project, processed_dataset_name
+    raw_train_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root
 ):
-    import argparse
     import os
-
     import numpy as np
-    from clearml import Dataset, Task
+    from clearml import Dataset
+    import cv2
+    import glob
 
-    return "ProcessTrainDatasetID"
+    # Fetch the dataset from ClearML
+    dataset = Dataset.get(raw_train_dataset_id) #dataset_name=processed_dataset_name, dataset_project=processed_dataset_project)
+    local_dataset_path = dataset.get_local_copy()
 
-@PipelineDecorator.component(name="ProcessValidData", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+    # Define paths for train, valid, and test datasets
+    mages_path = os.path.join(local_dataset_path, "train/images")
+    labels_path = os.path.join(local_dataset_path, "train/labels")
+    
+    print(f"Local Dataset Path: {local_dataset_path}")
+
+    def load_labels(label_path):
+        with open(label_path, 'r') as file:
+            data = file.readlines()
+        labels = [list(map(float, line.strip().split())) for line in data]
+        return labels
+
+    def load_dataset(images_path, labels_path):
+        image_files = sorted(glob.glob(os.path.join(images_path, "*.jpg")))
+        label_files = sorted(glob.glob(os.path.join(labels_path, "*.txt")))
+        
+        images = [cv2.imread(img) for img in image_files]
+        labels = [load_labels(lbl) for lbl in label_files]
+        
+        return np.array(images), np.array(labels)
+
+    # Load datasets
+    train_images, train_labels = load_dataset(mages_path, labels_path)
+    
+    # Save datasets as NumPy arrays
+    np.save("train_images.npy", train_images)
+    np.save("train_labels.npy", train_labels)
+    
+    # Create a new ClearML dataset for the NumPy files
+    new_dataset = Dataset.create(dataset_name="processed_dataset_name"+"ProcessedTrainDataset" , dataset_project=processed_dataset_project)
+
+    # Add the NumPy files to the new dataset
+    new_dataset.add_files("train_images.npy")
+    new_dataset.add_files("train_labels.npy")
+   
+    # Upload the new dataset to ClearML
+    new_dataset.upload()
+
+    # Finalize the dataset
+    new_dataset.finalize()
+
+    print("New dataset with NumPy arrays has been created and uploaded to ClearML.")
+
+    return dataset.id
+
+@PipelineDecorator.component(name="ProcessValidData", return_values=["processed_valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_two_b(
-    raw_valid_dataset_id, processed_dataset_project, processed_dataset_name
+    raw_valid_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root
 ):
-    import argparse
     import os
-
     import numpy as np
-    from clearml import Dataset, Task
+    from clearml import Dataset
+    import cv2
+    import glob
 
-    return "ProcessValidDatasetID"
+    # Fetch the dataset from ClearML
+    dataset = Dataset.get(raw_valid_dataset_id) #dataset_name=processed_dataset_name, dataset_project=processed_dataset_project)
+    local_dataset_path = dataset.get_local_copy()
+
+    # Define paths for train, valid, and test datasets
+    images_path = os.path.join(local_dataset_path, "valid/images")
+    labels_path = os.path.join(local_dataset_path, "valid/labels")
+    
+    print(f"Local Dataset Path: {local_dataset_path}")
+
+    def load_labels(label_path):
+        with open(label_path, 'r') as file:
+            data = file.readlines()
+        labels = [list(map(float, line.strip().split())) for line in data]
+        return labels
+
+    def load_dataset(images_path, labels_path):
+        image_files = sorted(glob.glob(os.path.join(images_path, "*.jpg")))
+        label_files = sorted(glob.glob(os.path.join(labels_path, "*.txt")))
+        
+        images = [cv2.imread(img) for img in image_files]
+        labels = [load_labels(lbl) for lbl in label_files]
+        
+        return np.array(images), np.array(labels)
+
+    # Load datasets
+    valid_images, valid_labels = load_dataset(images_path, labels_path)
+    
+    # Save datasets as NumPy arrays
+    np.save("valid_images.npy", valid_images)
+    np.save("valid_labels.npy", valid_labels)
+    
+    # Create a new ClearML dataset for the NumPy files
+    new_dataset = Dataset.create(dataset_name="processed_dataset_name"+"ProcessedValidDataset" , dataset_project=processed_dataset_project)
+
+    # Add the NumPy files to the new dataset
+    new_dataset.add_files("valid_images.npy")
+    new_dataset.add_files("valid_labels.npy")
+   
+    # Upload the new dataset to ClearML
+    new_dataset.upload()
+
+    # Finalize the dataset
+    new_dataset.finalize()
+
+    print("New dataset with NumPy arrays has been created and uploaded to ClearML.")
+
+    return dataset.id
 
 
-@PipelineDecorator.component(name="ProcessTestData", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+@PipelineDecorator.component(name="ProcessTestData", return_values=["processed_test_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_two_c(
-    raw_test_dataset_id, processed_dataset_project, processed_dataset_name
+    raw_test_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root
 ):
-    import argparse
     import os
-
     import numpy as np
-    from clearml import Dataset, Task
+    from clearml import Dataset
+    import cv2
+    import glob
 
-    return "ProcessTestDatasetID"
+    # Fetch the dataset from ClearML
+    dataset = Dataset.get(raw_test_dataset_id) #dataset_name=processed_dataset_name, dataset_project=processed_dataset_project)
+    local_dataset_path = dataset.get_local_copy()
+
+    # Define paths for train, valid, and test datasets
+    images_path = os.path.join(local_dataset_path, "valid/images")
+    labels_path = os.path.join(local_dataset_path, "valid/labels")
+    
+    print(f"Local Dataset Path: {local_dataset_path}")
+
+    def load_labels(label_path):
+        with open(label_path, 'r') as file:
+            data = file.readlines()
+        labels = [list(map(float, line.strip().split())) for line in data]
+        return labels
+
+    def load_dataset(images_path, labels_path):
+        image_files = sorted(glob.glob(os.path.join(images_path, "*.jpg")))
+        label_files = sorted(glob.glob(os.path.join(labels_path, "*.txt")))
+        
+        images = [cv2.imread(img) for img in image_files]
+        labels = [load_labels(lbl) for lbl in label_files]
+        
+        return np.array(images), np.array(labels)
+
+    # Load datasets
+    test_images, test_labels = load_dataset(images_path, labels_path)
+    
+    # Save datasets as NumPy arrays
+    np.save("test_images.npy", test_images)
+    np.save("test_labels.npy", test_labels)
+    
+    # Create a new ClearML dataset for the NumPy files
+    new_dataset = Dataset.create(dataset_name="processed_dataset_name"+"ProcessedTestDataset" , dataset_project=processed_dataset_project)
+
+    # Add the NumPy files to the new dataset
+    new_dataset.add_files("test_images.npy")
+    new_dataset.add_files("test_labels.npy")
+   
+    # Upload the new dataset to ClearML
+    new_dataset.upload()
+
+    # Finalize the dataset
+    new_dataset.finalize()
+
+    print("New dataset with NumPy arrays has been created and uploaded to ClearML.")
+
+    return dataset.id
 
 
 
@@ -299,13 +440,13 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_
     raw_test_dataset_id = step_one_c(start_data_pipeline_id, dataset_project, dataset_name, dataset_root)
     
     
-    process_train_dataset_id = step_two_a(raw_train_dataset_id, dataset_project, dataset_name)
+    process_train_dataset_id = step_two_a(raw_train_dataset_id, dataset_project, dataset_name, dataset_root)
     
     
-    process_valid_dataset_id = step_two_b(raw_validation_dataset_id, dataset_project, dataset_name)
+    process_valid_dataset_id = step_two_b(raw_validation_dataset_id, dataset_project, dataset_name, dataset_root)
     
     
-    process_test_dataset_id = step_two_c(raw_test_dataset_id, dataset_project, dataset_name)
+    process_test_dataset_id = step_two_c(raw_test_dataset_id, dataset_project, dataset_name, dataset_root)
 
     start_model_pipeline_id = step_three_merge(process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_project, dataset_name)
     

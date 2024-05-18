@@ -147,8 +147,8 @@ def step_two_a(
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTrainDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
-    new_dataset.add_files("train_images.npy")
-    new_dataset.add_files("train_labels.npy")
+    new_dataset.add_files("./processed/train_images.npy")
+    new_dataset.add_files("./processed/train_labels.npy")
    
     # Upload the new dataset to ClearML
     new_dataset.upload()
@@ -206,8 +206,8 @@ def step_two_b(
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedValidDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
-    new_dataset.add_files("valid_images.npy")
-    new_dataset.add_files("valid_labels.npy")
+    new_dataset.add_files("./processed/valid_images.npy")
+    new_dataset.add_files("./processed/valid_labels.npy")
    
     # Upload the new dataset to ClearML
     new_dataset.upload()
@@ -266,8 +266,8 @@ def step_two_c(
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTestDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
-    new_dataset.add_files("test_images.npy")
-    new_dataset.add_files("test_labels.npy")
+    new_dataset.add_files("./processed/test_images.npy")
+    new_dataset.add_files("./processed/test_labels.npy")
    
     # Upload the new dataset to ClearML
     new_dataset.upload()

@@ -103,7 +103,7 @@ def step_one_c(start_task_id, dataset_project, dataset_name, dataset_root):
 
 @PipelineDecorator.component(name="ProcessTrainData", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_two_a(
-    raw_train_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root
+    raw_train_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root, processed_dataset_root
 ):
     import os
     import numpy as np
@@ -140,15 +140,15 @@ def step_two_a(
     train_images, train_labels = load_dataset(mages_path, labels_path)
     
     # Save datasets as NumPy arrays
-    np.save("./processed/train_images.npy", train_images)
-    np.save("./processed/train_labels.npy", train_labels)
+    np.save(f"{processed_dataset_root}/train_images.npy", train_images)
+    np.save(f"{processed_dataset_root}/train_labels.npy", train_labels)
     
     # Create a new ClearML dataset for the NumPy files
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTrainDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
-    new_dataset.add_files("./processed/train_images.npy")
-    new_dataset.add_files("./processed/train_labels.npy")
+    new_dataset.add_files(f"{processed_dataset_root}/train_images.npy")
+    new_dataset.add_files(f"{processed_dataset_root}/train_labels.npy")
    
     # Upload the new dataset to ClearML
     new_dataset.upload()
@@ -156,13 +156,18 @@ def step_two_a(
     # Finalize the dataset
     new_dataset.finalize()
 
+    # Clean up: Remove the numpy files after upload
+    os.remove("./processed/train_images.npy")
+    os.remove("./processed/train_labels.npy")
+
+
     print("New dataset with NumPy arrays has been created and uploaded to ClearML.")
 
     return dataset.id
 
 @PipelineDecorator.component(name="ProcessValidData", return_values=["processed_valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_two_b(
-    raw_valid_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root
+    raw_valid_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root, processed_dataset_root
 ):
     import os
     import numpy as np
@@ -199,21 +204,26 @@ def step_two_b(
     valid_images, valid_labels = load_dataset(images_path, labels_path)
     
     # Save datasets as NumPy arrays
-    np.save(f"{dataset_root}/valid_images.npy", valid_images)
-    np.save(f"{dataset_root}/valid_labels.npy", valid_labels)
+    np.save(f"{processed_dataset_root}/valid_images.npy", valid_images)
+    np.save(f"{processed_dataset_root}/valid_labels.npy", valid_labels)
     
     # Create a new ClearML dataset for the NumPy files
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedValidDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
-    new_dataset.add_files(f"{dataset_root}/valid_images.npy")
-    new_dataset.add_files(f"{dataset_root}/valid_labels.npy")
+    new_dataset.add_files(f"{processed_dataset_root}/valid_images.npy")
+    new_dataset.add_files(f"{processed_dataset_root}/valid_labels.npy")
    
     # Upload the new dataset to ClearML
     new_dataset.upload()
 
     # Finalize the dataset
     new_dataset.finalize()
+
+    # Clean up: Remove the numpy files after upload
+    os.remove(f"{processed_dataset_root}/valid_images.npy")
+    os.remove(f"{processed_dataset_root}/valid_labels.npy")
+
 
     print("New dataset with NumPy arrays has been created and uploaded to ClearML.")
 
@@ -222,7 +232,7 @@ def step_two_b(
 
 @PipelineDecorator.component(name="ProcessTestData", return_values=["processed_test_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
 def step_two_c(
-    raw_test_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root
+    raw_test_dataset_id, processed_dataset_project, processed_dataset_name, dataset_root, processed_dataset_root
 ):
     import os
     import numpy as np
@@ -259,21 +269,26 @@ def step_two_c(
     test_images, test_labels = load_dataset(images_path, labels_path)
     
     # Save datasets as NumPy arrays
-    np.save(f"{dataset_root}/test_images.npy", test_images)
-    np.save(f"{dataset_root}/test_labels.npy", test_labels)
+    np.save(f"{processed_dataset_root}/test_images.npy", test_images)
+    np.save(f"{processed_dataset_root}/test_labels.npy", test_labels)
     
     # Create a new ClearML dataset for the NumPy files
     new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTestDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
-    new_dataset.add_files(f"{dataset_root}/test_images.npy")
-    new_dataset.add_files(f"{dataset_root}/test_labels.npy")
+    new_dataset.add_files(f"{processed_dataset_root}/test_images.npy")
+    new_dataset.add_files(f"{processed_dataset_root}/test_labels.npy")
    
     # Upload the new dataset to ClearML
     new_dataset.upload()
 
     # Finalize the dataset
     new_dataset.finalize()
+
+    # Clean up: Remove the numpy files after upload
+    os.remove(f"{processed_dataset_root}/test_images.npy")
+    os.remove(f"{processed_dataset_root}/test_labels.npy")
+
 
     print("New dataset with NumPy arrays has been created and uploaded to ClearML.")
 
@@ -446,7 +461,7 @@ def step_eight(
 # notice that all pipeline component function calls are actually executed remotely
 # Only when a return value is used, the pipeline logic will wait for the component execution to complete
 @PipelineDecorator.pipeline(name="BrainScan2DataPipeline", project="BrainScan2", target_project="BrainScan2", pipeline_execution_queue="uts-strykers-queue", default_queue="uts-strykers-queue") #, version="0.0.6")
-def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_root, queue_name):
+def executing_data_pipeline(dataset_project, dataset_name, dataset_root, processed_dataset_root, output_root, queue_name):
 
     start_data_pipeline_id = start_data_pipeline(dataset_project, dataset_name, dataset_root)
 
@@ -459,13 +474,13 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_
     raw_test_dataset_id = step_one_c(start_data_pipeline_id, dataset_project, dataset_name, dataset_root)
     
     
-    process_train_dataset_id = step_two_a(raw_train_dataset_id, dataset_project, dataset_name, dataset_root)
+    process_train_dataset_id = step_two_a(raw_train_dataset_id, dataset_project, dataset_name, dataset_root, processed_dataset_root)
     
     
-    process_valid_dataset_id = step_two_b(raw_validation_dataset_id, dataset_project, dataset_name, dataset_root)
+    process_valid_dataset_id = step_two_b(raw_validation_dataset_id, dataset_project, dataset_name, dataset_root, processed_dataset_root)
     
     
-    process_test_dataset_id = step_two_c(raw_test_dataset_id, dataset_project, dataset_name, dataset_root)
+    process_test_dataset_id = step_two_c(raw_test_dataset_id, dataset_project, dataset_name, dataset_root, processed_dataset_root)
 
     start_model_pipeline_id = step_three_merge(process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_project, dataset_name)
     
@@ -502,6 +517,7 @@ if __name__ == "__main__":
         dataset_name="BrainScan2",
         #dataset_root="/root/braintumourdetection/brainscan2/datasets/brain-tumor",
         dataset_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor",
+        processed_dataset_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/processed",
         output_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor/output",
         queue_name="uts-strykers-queue"
     )

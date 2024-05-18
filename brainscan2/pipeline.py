@@ -351,13 +351,13 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
 #    return train_images, train_labels, valid_images, valid_labels, test_images, test_labels
 #
 ##Connect to the previous task and fetch the dataset IDs
-#previous_task_id = start_model_pipeline_id
-#previous_task = Task.get_task(task_id=previous_task_id)
-#
-## Retrieve the dataset IDs
-#process_train_dataset_id = previous_task.get_parameters()['General/process_train_dataset_id']
-#process_valid_dataset_id = previous_task.get_parameters()['General/process_valid_dataset_id']
-#process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
+    previous_task_id = start_model_pipeline_id
+    previous_task = Task.get_task(task_id=previous_task_id)
+    #
+    ## Retrieve the dataset IDs
+    process_train_dataset_id = previous_task.get_parameters()['General/process_train_dataset_id']
+    process_valid_dataset_id = previous_task.get_parameters()['General/process_valid_dataset_id']
+    process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
 #
 #print(f"Train Dataset ID: {process_train_dataset_id}")
 #print(f"Valid Dataset ID: {process_valid_dataset_id}")
@@ -390,22 +390,60 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
 
     # Train the model
-    results = model.train(data='brainscan.yaml', epochs=100, imgsz=640)
+    results = model.train(data='brainscan.yaml', epochs=10, imgsz=640)
+
+    task = Task.current_task
+
+    task.connect({
+        'process_train_dataset_id': process_train_dataset_id,
+        'process_valid_dataset_id': process_valid_dataset_id,
+        'process_test_dataset_id': process_test_dataset_id
+    })
         
     return Task.current_task.id
 
 
 @PipelineDecorator.component(name="EvaluateModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def step_five(
-    train_model_id, processed_dataset_project, processed_dataset_name
+    train_model_task_id, processed_dataset_project, processed_dataset_name
 ):
-    import argparse
     import os
-
+    from ultralytics import YOLO
+    from clearml import Task, Dataset
     import numpy as np
-    from clearml import Dataset, Task
 
-    return "evaluate_model_id"
+    # Connect to the previous task and fetch the dataset IDs
+    previous_task = Task.get_task(task_id=train_model_task_id)
+
+    # Retrieve the dataset IDs
+    process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
+
+    # Load the test dataset
+    test_dataset = Dataset.get(dataset_id=process_test_dataset_id)
+    test_dataset_path = test_dataset.get_local_copy()
+
+    # Load the test images and labels
+    test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
+    test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
+
+    # Load the trained model
+    task = Task.get_task(task_id=train_model_task_id)
+    model_path = task.models['output_model'][0].get_local_copy()
+
+    # Initialize the model
+    model = YOLO(model_path)
+
+    # Evaluate the model on the test dataset
+    results = model.val(data='brainscan.yaml', imgsz=640)
+
+    # Print evaluation metrics
+    print(f"Precision: {results.metrics['precision']}")
+    print(f"Recall: {results.metrics['recall']}")
+    print(f"mAP@0.5: {results.metrics['map50']}")
+    print(f"mAP@0.5:0.95: {results.metrics['map']}")
+    
+    return results.metrics
+    
 
 @PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=True, task_type=TaskTypes.optimizer)#, execution_queue="default")
 def step_six(

@@ -7,11 +7,18 @@ from clearml.automation.controller import PipelineDecorator
 from clearml.automation import HyperParameterOptimizer, UniformIntegerParameterRange, GridSearch
 
 
+@PipelineDecorator.component(name="StartTask", return_values=["start_task_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+def start_data_pipeline(dataset_project, dataset_name, dataset_root):
+    import os
+    from clearml import Dataset, Task
+    
+    return "startdatapipeline"
+
 # Make the following function an independent pipeline component step
 # notice all package imports inside the function will be automatically logged as
 # required packages for the pipeline execution step
 @PipelineDecorator.component(name="UploadRawTrainData", return_values=["train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_one(dataset_project, dataset_name, dataset_root):
+def step_one_a(start_task_id, dataset_project, dataset_name, dataset_root):
     import os
     from clearml import Dataset
 
@@ -40,7 +47,7 @@ def step_one(dataset_project, dataset_name, dataset_root):
     
     
 @PipelineDecorator.component(name="UploadRawValidData", return_values=["valid_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_two_a(raw_train_dataset_id, dataset_project, dataset_name, dataset_root):
+def step_one_b(start_task_id, dataset_project, dataset_name, dataset_root):
     import os
     from clearml import Dataset
     
@@ -67,7 +74,7 @@ def step_two_a(raw_train_dataset_id, dataset_project, dataset_name, dataset_root
     return dataset.id
 
 @PipelineDecorator.component(name="UploadRawTestData", return_values=["test_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_two_b(raw_train_dataset_id, dataset_project, dataset_name, dataset_root):
+def step_one_c(start_task_id, dataset_project, dataset_name, dataset_root):
     import os
     from clearml import Dataset
     
@@ -95,7 +102,7 @@ def step_two_b(raw_train_dataset_id, dataset_project, dataset_name, dataset_root
  
 
 @PipelineDecorator.component(name="ProcessTrainData", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_two_c(
+def step_two_a(
     raw_train_dataset_id, processed_dataset_project, processed_dataset_name
 ):
     import argparse
@@ -107,8 +114,8 @@ def step_two_c(
     return "ProcessTrainDatasetID"
 
 @PipelineDecorator.component(name="ProcessValidData", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_three_a(
-    process_valid_dataset_id, processed_dataset_project, processed_dataset_name
+def step_two_b(
+    raw_valid_dataset_id, processed_dataset_project, processed_dataset_name
 ):
     import argparse
     import os
@@ -120,8 +127,8 @@ def step_three_a(
 
 
 @PipelineDecorator.component(name="ProcessTestData", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
-def step_three_b(
-    process_test_dataset_id, processed_dataset_project, processed_dataset_name
+def step_two_c(
+    raw_test_dataset_id, processed_dataset_project, processed_dataset_name
 ):
     import argparse
     import os
@@ -132,9 +139,25 @@ def step_three_b(
     return "ProcessTestDatasetID"
 
 
+
+
+@PipelineDecorator.component(name="MergeDataTasks", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.data_processing)#, execution_queue="default")
+def step_three_merge(
+     process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, processed_dataset_project, processed_dataset_name
+):
+    import argparse
+    import os
+
+    import numpy as np
+    from clearml import Dataset, Task
+
+    return "startmodelpipeline"
+
+
+
 @PipelineDecorator.component(name="TrainModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def step_four(
-    process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, processed_dataset_project, processed_dataset_name
+    start_model_pipeline_id
 ):
     import argparse
     import os
@@ -266,22 +289,26 @@ def step_eight(
 @PipelineDecorator.pipeline(name="BrainScan2DataPipeline", project="BrainScan2", target_project="BrainScan2", pipeline_execution_queue="uts-strykers-queue", default_queue="uts-strykers-queue") #, version="0.0.6")
 def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_root):
 
-    raw_train_dataset_id = step_one(dataset_project, dataset_name, dataset_root)
+    start_data_pipeline_id = start_data_pipeline(dataset_project, dataset_name, dataset_root)
+
+    raw_train_dataset_id = step_one_a(start_data_pipeline_id, dataset_project, dataset_name, dataset_root)
 
     
-    raw_validation_dataset_id = step_two_a(raw_train_dataset_id, dataset_project, dataset_name, dataset_root)
+    raw_validation_dataset_id = step_one_b(start_data_pipeline_id, dataset_project, dataset_name, dataset_root)
     
     
-    raw_test_dataset_id = step_two_b(raw_train_dataset_id, dataset_project, dataset_name, dataset_root)
+    raw_test_dataset_id = step_one_c(start_data_pipeline_id, dataset_project, dataset_name, dataset_root)
     
     
-    process_train_dataset_id = step_two_c(raw_train_dataset_id, dataset_project, dataset_name)
+    process_train_dataset_id = step_two_a(raw_train_dataset_id, dataset_project, dataset_name)
     
     
-    process_valid_dataset_id = step_three_a(raw_validation_dataset_id, dataset_name)
+    process_valid_dataset_id = step_two_b(raw_validation_dataset_id, dataset_project, dataset_name)
     
     
-    process_test_dataset_id = step_three_b(raw_test_dataset_id, dataset_name)
+    process_test_dataset_id = step_two_c(raw_test_dataset_id, dataset_project, dataset_name)
+
+    start_model_pipeline_id = step_three_merge(process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_project, dataset_name)
     
     
     step_four_id = step_four(process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_name, dataset_root)

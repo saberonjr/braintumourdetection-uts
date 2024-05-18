@@ -339,12 +339,12 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
         test_dataset_path = test_dataset.get_local_copy()
 
         # Load the NumPy arrays
-        train_images = np.load(os.path.join(processed_dataset_root, "train_images.npy"))
-        train_labels = np.load(os.path.join(processed_dataset_root, "train_labels.npy"))
-        valid_images = np.load(os.path.join(processed_dataset_root, "valid_images.npy"))
-        valid_labels = np.load(os.path.join(processed_dataset_root, "valid_labels.npy"))
-        test_images = np.load(os.path.join(processed_dataset_root, "test_images.npy"))
-        test_labels = np.load(os.path.join(processed_dataset_root, "test_labels.npy"))
+        train_images = np.load(os.path.join(train_dataset_path, "train_images.npy"))
+        train_labels = np.load(os.path.join(train_dataset_path, "train_labels.npy"))
+        valid_images = np.load(os.path.join(valid_dataset_path, "valid_images.npy"))
+        valid_labels = np.load(os.path.join(valid_dataset_path, "valid_labels.npy"))
+        test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
+        test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
 
         return train_images, train_labels, valid_images, valid_labels, test_images, test_labels
 

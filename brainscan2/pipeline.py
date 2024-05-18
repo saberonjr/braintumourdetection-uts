@@ -327,63 +327,65 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     from clearml import Dataset, Task
     import cv2
 
-    def load_numpy_datasets(train_dataset_id, valid_dataset_id, test_dataset_id, processed_dataset_root):
-        # Fetch datasets
-        train_dataset = Dataset.get(dataset_id=train_dataset_id)
-        valid_dataset = Dataset.get(dataset_id=valid_dataset_id)
-        test_dataset = Dataset.get(dataset_id=test_dataset_id)
-
-        # Get the local paths for these datasets
-        train_dataset_path = train_dataset.get_local_copy()
-        valid_dataset_path = valid_dataset.get_local_copy()
-        test_dataset_path = test_dataset.get_local_copy()
-
-        # Load the NumPy arrays
-        train_images = np.load(os.path.join(train_dataset_path, "train_images.npy"))
-        train_labels = np.load(os.path.join(train_dataset_path, "train_labels.npy"))
-        valid_images = np.load(os.path.join(valid_dataset_path, "valid_images.npy"))
-        valid_labels = np.load(os.path.join(valid_dataset_path, "valid_labels.npy"))
-        test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
-        test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
-
-        return train_images, train_labels, valid_images, valid_labels, test_images, test_labels
-
-    #Connect to the previous task and fetch the dataset IDs
-    previous_task_id = start_model_pipeline_id
-    previous_task = Task.get_task(task_id=previous_task_id)
-
-    # Retrieve the dataset IDs
-    process_train_dataset_id = previous_task.get_parameters()['General/process_train_dataset_id']
-    process_valid_dataset_id = previous_task.get_parameters()['General/process_valid_dataset_id']
-    process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
-
-    print(f"Train Dataset ID: {process_train_dataset_id}")
-    print(f"Valid Dataset ID: {process_valid_dataset_id}")
-    print(f"Test Dataset ID: {process_test_dataset_id}")
-
-    # Load datasets
-    train_images, train_labels, valid_images, valid_labels, test_images, test_labels = load_numpy_datasets(
-        process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, processed_dataset_root)
-    
-    os.makedirs(f'{processed_dataset_root}/train/images', exist_ok=True)
-    os.makedirs(f'{processed_dataset_root}/train/labels', exist_ok=True)
-    os.makedirs(f'{processed_dataset_root}/valid/images', exist_ok=True)
-    os.makedirs(f'{processed_dataset_root}/valid/labels', exist_ok=True)
-    os.makedirs(f'{processed_dataset_root}/test/images', exist_ok=True)
-    os.makedirs(f'{processed_dataset_root}/test/labels', exist_ok=True)
-
-    for i, (img, lbl) in enumerate(zip(train_images, train_labels)):
-        cv2.imwrite(f'{processed_dataset_root}/train/images/{i}.jpg', img)
-        np.savetxt(f'{processed_dataset_root}/train/labels/{i}.txt', lbl, fmt='%f')
-
-    for i, (img, lbl) in enumerate(zip(valid_images, valid_labels)):
-        cv2.imwrite(f'{processed_dataset_root}/valid/images/{i}.jpg', img)
-        np.savetxt(f'{processed_dataset_root}/valid/labels/{i}.txt', lbl, fmt='%f')
-
-    for i, (img, lbl) in enumerate(zip(test_images, test_labels)):
-        cv2.imwrite(f'{processed_dataset_root}/test/images/{i}.jpg', img)
-        np.savetxt(f'{processed_dataset_root}/test/labels/{i}.txt', lbl, fmt='%f')
-
+#def load_numpy_datasets(train_dataset_id, valid_dataset_id, test_dataset_id, processed_dataset_root):
+#    # Fetch datasets
+#    train_dataset = Dataset.get(dataset_id=train_dataset_id)
+#    valid_dataset = Dataset.get(dataset_id=valid_dataset_id)
+#    test_dataset = Dataset.get(dataset_id=test_dataset_id)
+#
+#    # Get the local paths for these datasets
+#    train_dataset_path = train_dataset.get_local_copy()
+#    valid_dataset_path = valid_dataset.get_local_copy()
+#    test_dataset_path = test_dataset.get_local_copy()
+#
+#    print(train_dataset_path, valid_dataset_path, test_dataset_path)
+#
+#    # Load the NumPy arrays
+#    train_images = np.load(os.path.join(train_dataset_path, "train_images.npy"))
+#    train_labels = np.load(os.path.join(train_dataset_path, "train_labels.npy"))
+#    valid_images = np.load(os.path.join(valid_dataset_path, "valid_images.npy"))
+#    valid_labels = np.load(os.path.join(valid_dataset_path, "valid_labels.npy"))
+#    test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
+#    test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
+#
+#    return train_images, train_labels, valid_images, valid_labels, test_images, test_labels
+#
+##Connect to the previous task and fetch the dataset IDs
+#previous_task_id = start_model_pipeline_id
+#previous_task = Task.get_task(task_id=previous_task_id)
+#
+## Retrieve the dataset IDs
+#process_train_dataset_id = previous_task.get_parameters()['General/process_train_dataset_id']
+#process_valid_dataset_id = previous_task.get_parameters()['General/process_valid_dataset_id']
+#process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
+#
+#print(f"Train Dataset ID: {process_train_dataset_id}")
+#print(f"Valid Dataset ID: {process_valid_dataset_id}")
+#print(f"Test Dataset ID: {process_test_dataset_id}")
+#
+## Load datasets
+#train_images, train_labels, valid_images, valid_labels, test_images, test_labels = load_numpy_datasets(
+#    process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, processed_dataset_root)
+#
+#os.makedirs(f'{processed_dataset_root}/train/images', exist_ok=True)
+#os.makedirs(f'{processed_dataset_root}/train/labels', exist_ok=True)
+#os.makedirs(f'{processed_dataset_root}/valid/images', exist_ok=True)
+#os.makedirs(f'{processed_dataset_root}/valid/labels', exist_ok=True)
+#os.makedirs(f'{processed_dataset_root}/test/images', exist_ok=True)
+#os.makedirs(f'{processed_dataset_root}/test/labels', exist_ok=True)
+#
+#for i, (img, lbl) in enumerate(zip(train_images, train_labels)):
+#    cv2.imwrite(f'{processed_dataset_root}/train/images/{i}.jpg', img)
+#    np.savetxt(f'{processed_dataset_root}/train/labels/{i}.txt', lbl, fmt='%f')
+#
+#for i, (img, lbl) in enumerate(zip(valid_images, valid_labels)):
+#    cv2.imwrite(f'{processed_dataset_root}/valid/images/{i}.jpg', img)
+#    np.savetxt(f'{processed_dataset_root}/valid/labels/{i}.txt', lbl, fmt='%f')
+#
+#for i, (img, lbl) in enumerate(zip(test_images, test_labels)):
+#    cv2.imwrite(f'{processed_dataset_root}/test/images/{i}.jpg', img)
+#    np.savetxt(f'{processed_dataset_root}/test/labels/{i}.txt', lbl, fmt='%f')
+#
     # Load a model
     model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
 

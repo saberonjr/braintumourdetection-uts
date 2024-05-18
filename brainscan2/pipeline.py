@@ -546,7 +546,7 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, process
     start_model_pipeline_id = step_three_merge(process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_project, dataset_name)
     
     
-    step_four_id = step_four(start_model_pipeline_id, dataset_name, dataset_root)
+    step_four_id = step_four(start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root)
 
     
     step_five_id = step_five(step_four_id, dataset_name, dataset_root)

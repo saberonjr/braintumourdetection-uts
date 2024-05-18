@@ -286,7 +286,7 @@ def step_eight(
 # notice that all pipeline component function calls are actually executed remotely
 # Only when a return value is used, the pipeline logic will wait for the component execution to complete
 @PipelineDecorator.pipeline(name="BrainScan2DataPipeline", project="BrainScan2", target_project="BrainScan2", pipeline_execution_queue="uts-strykers-queue", default_queue="uts-strykers-queue") #, version="0.0.6")
-def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_root):
+def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_root, queue_name):
 
     start_data_pipeline_id = start_data_pipeline(dataset_project, dataset_name, dataset_root)
 
@@ -316,13 +316,13 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, output_
     step_five_id = step_five(step_four_id, dataset_name, dataset_root)
 
     
-    step_six_id = step_six(step_five_id, dataset_name, dataset_root)
+    step_six_id = step_six(step_five_id, queue_name)
 
 
-    step_seven_id = step_seven(step_six_id, dataset_name, dataset_root)
+    step_seven_id = step_seven(step_six_id,dataset_project, dataset_name)
 
     
-    step_eight_id = step_eight(step_seven_id, dataset_name, dataset_root)
+    step_eight_id = step_eight(step_seven_id,dataset_project, dataset_name)
 
 
 
@@ -342,7 +342,8 @@ if __name__ == "__main__":
         dataset_name="BrainScan2",
         #dataset_root="/root/braintumourdetection/brainscan2/datasets/brain-tumor",
         dataset_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor",
-        output_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor/output"
+        output_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor/output",
+        queue_name="uts-strykers-queue"
     )
 
     print("process completed")

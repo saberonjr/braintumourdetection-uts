@@ -395,7 +395,7 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     # Define the output directory for training results
     results_dir = '/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/models'
 
-    task = Task.current_task
+    task = Task.current_task()
     # Train the model
     results = model.train(data='brainscan.yaml', epochs=3, imgsz=640, project=results_dir, name='brain_tumor_model')
 

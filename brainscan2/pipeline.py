@@ -157,8 +157,8 @@ def step_two_a(
     new_dataset.finalize()
 
     # Clean up: Remove the numpy files after upload
-    os.remove("./processed/train_images.npy")
-    os.remove("./processed/train_labels.npy")
+    os.remove(f"{processed_dataset_root}/train_images.npy")
+    os.remove(f"{processed_dataset_root}/train_labels.npy")
 
 
     print("New dataset with NumPy arrays has been created and uploaded to ClearML.")
@@ -410,6 +410,10 @@ def step_six(
         min_iteration_per_job=15000,
         max_iteration_per_job=150000,
     )
+
+    return "hpo_id"
+
+def testme():
     # report every 12 seconds, this is way too often, but we are testing here J
     optimizer.set_report_period(0.2)
     # start the optimization process, callback function to be called every time an experiment is completed

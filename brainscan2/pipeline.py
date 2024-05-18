@@ -324,7 +324,7 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     import os
     from ultralytics import YOLO
     import numpy as np
-    from clearml import Dataset, Task
+    from clearml import Dataset, Task, OutputModel
     import cv2
 
 #def load_numpy_datasets(train_dataset_id, valid_dataset_id, test_dataset_id, processed_dataset_root):
@@ -390,17 +390,32 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
 
     # Train the model
-    results = model.train(data='brainscan.yaml', epochs=10, imgsz=640)
+    #results = model.train(data='brainscan.yaml', epochs=10, imgsz=640)
+
+    # Define the output directory for training results
+    results_dir = '/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/models'
 
     task = Task.current_task
+    # Train the model
+    results = model.train(data='brainscan.yaml', epochs=3, imgsz=640, project=results_dir, name='brain_tumor_model')
+
+    # Save the trained model weights
+    model_output_path = os.path.join(results_dir, 'brain_tumor_model', 'weights', 'best.pt')
+    output_model = OutputModel(task=task, framework="PyTorch")
+    output_model.update_weights(weights_filename=model_output_path, auto_delete_file=False)
+
+    # Log the model ID
+    model_id = output_model.id
+    print(f"Trained model ID: {model_id}")
 
     task.connect({
         'process_train_dataset_id': process_train_dataset_id,
         'process_valid_dataset_id': process_valid_dataset_id,
         'process_test_dataset_id': process_test_dataset_id
     })
-        
-    return Task.current_task.id
+
+    task.close()
+    return model_id
 
 
 @PipelineDecorator.component(name="EvaluateModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")

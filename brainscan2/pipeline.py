@@ -144,7 +144,7 @@ def step_two_a(
     np.save("train_labels.npy", train_labels)
     
     # Create a new ClearML dataset for the NumPy files
-    new_dataset = Dataset.create(dataset_name="processed_dataset_name"+"ProcessedTrainDataset" , dataset_project=processed_dataset_project)
+    new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTrainDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
     new_dataset.add_files("train_images.npy")
@@ -203,7 +203,7 @@ def step_two_b(
     np.save("valid_labels.npy", valid_labels)
     
     # Create a new ClearML dataset for the NumPy files
-    new_dataset = Dataset.create(dataset_name="processed_dataset_name"+"ProcessedValidDataset" , dataset_project=processed_dataset_project)
+    new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedValidDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
     new_dataset.add_files("valid_images.npy")
@@ -263,7 +263,7 @@ def step_two_c(
     np.save("test_labels.npy", test_labels)
     
     # Create a new ClearML dataset for the NumPy files
-    new_dataset = Dataset.create(dataset_name="processed_dataset_name"+"ProcessedTestDataset" , dataset_project=processed_dataset_project)
+    new_dataset = Dataset.create(dataset_name=f"{processed_dataset_name}ProcessedTestDataset" , dataset_project=processed_dataset_project)
 
     # Add the NumPy files to the new dataset
     new_dataset.add_files("test_images.npy")
@@ -286,13 +286,19 @@ def step_two_c(
 def step_three_merge(
      process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, processed_dataset_project, processed_dataset_name
 ):
-    import argparse
-    import os
-
+    
     import numpy as np
     from clearml import Dataset, Task
 
-    return "startmodelpipeline"
+    task = Task.current_task()
+
+    task.connect({
+        'process_train_dataset_id': process_train_dataset_id,
+        'process_valid_dataset_id': process_valid_dataset_id,
+        'process_test_dataset_id': process_test_dataset_id
+    })
+    
+    return task.id
 
 
 
@@ -305,6 +311,19 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root
     import numpy as np
     from clearml import Dataset, Task
 
+    #Connect to the previous task and fetch the dataset IDs
+    previous_task_id = start_model_pipeline_id
+    previous_task = Task.get_task(task_id=previous_task_id)
+
+    # Retrieve the dataset IDs
+    process_train_dataset_id = previous_task.get_parameters()['process_train_dataset_id']
+    process_valid_dataset_id = previous_task.get_parameters()['process_valid_dataset_id']
+    process_test_dataset_id = previous_task.get_parameters()['process_test_dataset_id']
+
+    print(f"Train Dataset ID: {process_train_dataset_id}")
+    print(f"Valid Dataset ID: {process_valid_dataset_id}")
+    print(f"Test Dataset ID: {process_test_dataset_id}")
+    
     return "trainmodelid"
 
 

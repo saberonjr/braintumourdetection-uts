@@ -448,28 +448,58 @@ def step_five(
     model = YOLO(model_path)
 
     # Evaluate the model on the test dataset
-    results = model.val(data='brainscan.yaml', imgsz=640)
+    test_results = model.val(data='brainscan.yaml', imgsz=640)
+
+    task.get_logger().report_scalar("mAP@0.5", "Test", iteration=0, value=test_results.metrics['map50'])
+    task.get_logger().report_scalar("mAP@0.5:0.95", "Test", iteration=0, value=test_results.metrics['map'])
+    task.get_logger().report_scalar("Precision", "Test", iteration=0, value=test_results.metrics['precision'])
 
     # Print evaluation metrics
-    print(f"Precision: {results.metrics['precision']}")
-    print(f"Recall: {results.metrics['recall']}")
-    print(f"mAP@0.5: {results.metrics['map50']}")
-    print(f"mAP@0.5:0.95: {results.metrics['map']}")
+    print(f"Precision: {test_results.metrics['precision']}")
+    print(f"Recall: {test_results.metrics['recall']}")
+    print(f"mAP@0.5: {test_results.metrics['map50']}")
+    print(f"mAP@0.5:0.95: {test_results.metrics['map']}")
     
-    return results.metrics
+    return model.id, test_results.metrics
     
 
 @PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=True, task_type=TaskTypes.optimizer)#, execution_queue="default")
 def step_six(
-    base_task_id, queue_name
+    model_id, queue_name
 ):
-    import argparse
-    import os
+    from clearml import Task
+    from clearml.automation import HyperParameterOptimizer, UniformParameterRange
 
-    import numpy as np
-    from clearml import Dataset, Task
+    task = Task.current_task()
+    # Create a HyperParameterOptimizer object
+    optimizer = HyperParameterOptimizer(
+        base_task_id=task.id,
+        # Define the objective metric
+        objective_metric_title='mAP@0.5:0.95',
+        objective_metric_series='Test',
+        objective_metric_sign='max',
+        # Define the hyperparameters to optimize
+        hyper_parameters=[
+            UniformParameterRange('epochs', min_value=50, max_value=150),
+            UniformParameterRange('batch_size', min_value=8, max_value=32),
+            UniformParameterRange('imgsz', min_value=320, max_value=640),
+        ],
+        # Define the optimization strategy
+        execution_queue='default',
+        max_number_of_concurrent_tasks=2,
+        # Define the time limit for the entire optimization process
+        time_limit_per_job=None,
+        # Define the number of optimization iterations
+        total_max_jobs=20,
+        # Define the number of iterations without improvement after which the optimization will stop
+        min_iteration_per_job=10,
+    )
 
-    return "hpo_id"
+    # Start the optimization process
+    optimizer.start()
+
+    # Wait for the optimization to finish
+    optimizer.wait()
 
 def testme(base_task_id, queue_name):
 
@@ -603,10 +633,10 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, process
     step_four_id = step_four(start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root)
 
     
-    step_five_id = step_five(step_four_id, dataset_name, dataset_root)
+    model_id, test_results_metrics = step_five(step_four_id, dataset_name, dataset_root)
 
     
-    step_six_id = step_six(step_five_id, queue_name)
+    step_six_id = step_six(model_id, queue_name)
 
 
     step_seven_id = step_seven(step_six_id,dataset_project, dataset_name)

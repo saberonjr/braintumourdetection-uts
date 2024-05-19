@@ -446,8 +446,9 @@ def step_five(
     # Load the trained model
     task = Task.get_task(task_id=train_model_task_id)
     #model_path = task.models['output_model'][0].get_local_copy()
-    model = Model(model_id=model_id)
-    model_path = model.get_local_copy()
+    model_saved = Model(model_id=model_id)
+    model_path = model_saved.get_local_copy()
+    print(model_path)
 
     # Initialize the model
     model = YOLO(model_path)

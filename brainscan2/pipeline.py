@@ -430,15 +430,15 @@ def step_five(
     previous_task = Task.get_task(task_id=train_model_task_id)
 
     # Retrieve the dataset IDs
-    process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
+    #process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
 
     # Load the test dataset
-    test_dataset = Dataset.get(dataset_id=process_test_dataset_id)
-    test_dataset_path = test_dataset.get_local_copy()
+    #test_dataset = Dataset.get(dataset_id=process_test_dataset_id)
+    #test_dataset_path = test_dataset.get_local_copy()
 
     # Load the test images and labels
-    test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
-    test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
+    #test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
+    #test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
 
     # Load the trained model
     task = Task.get_task(task_id=train_model_task_id)

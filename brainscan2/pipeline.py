@@ -405,8 +405,8 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     output_model.update_weights(weights_filename=model_output_path, auto_delete_file=False)
 
     output_model.update_design('Model training completed')
-    output_model.update_comment('Model trained and ready for use')
-    output_model.finalize()
+    #output_model.update_comment('Model trained and ready for use')
+    output_model.publish()
     # Log the model ID
     model_id = output_model.id
     print(f"Trained model ID: {model_id}")
@@ -503,6 +503,14 @@ def step_six(
 
     # Wait for the optimization to finish
     optimizer.wait()
+
+    top_exp = optimizer.get_top_experiments(top_k=3)
+    print([t.id for t in top_exp])
+    # make sure background optimization stopped
+    optimizer.stop()
+
+    print("Optimisation Done")
+    return top_exp[0].id
 
 def testme(base_task_id, queue_name):
 

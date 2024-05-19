@@ -317,8 +317,8 @@ def step_three_merge(
 
 
 
-@PipelineDecorator.component(name="TrainModel", return_values=["training_task_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
-def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root
+@PipelineDecorator.component(name="TrainModel", return_values=["training_task_id" , "model_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root, results_dir
 ):
     import argparse
     import os
@@ -393,7 +393,7 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     #results = model.train(data='brainscan.yaml', epochs=10, imgsz=640)
 
     # Define the output directory for training results
-    results_dir = '/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/models'
+    #results_dir = '/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/models'
 
     task = Task.current_task()
     # Train the model
@@ -404,6 +404,9 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     output_model = OutputModel(task=task, framework="PyTorch")
     output_model.update_weights(weights_filename=model_output_path, auto_delete_file=False)
 
+    output_model.update_design('Model training completed')
+    output_model.update_comment('Model trained and ready for use')
+    output_model.finalize()
     # Log the model ID
     model_id = output_model.id
     print(f"Trained model ID: {model_id}")
@@ -411,15 +414,16 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     task.connect({
         'process_train_dataset_id': process_train_dataset_id,
         'process_valid_dataset_id': process_valid_dataset_id,
-        'process_test_dataset_id': process_test_dataset_id
+        'process_test_dataset_id': process_test_dataset_id,
+        'output_model': model_id,
     })
 
-    return task.id
+    return task.id, model_id
 
 
-@PipelineDecorator.component(name="EvaluateModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(name="EvaluateModel", return_values=["processed_train_dataset_id", "test_results_metrics"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def step_five(
-    train_model_task_id, processed_dataset_project, processed_dataset_name
+    train_model_task_id, model_id, processed_dataset_project, processed_dataset_name
 ):
     import os
     from ultralytics import YOLO
@@ -427,8 +431,7 @@ def step_five(
     import numpy as np
 
     # Connect to the previous task and fetch the dataset IDs
-    previous_task = Task.get_task(task_id=train_model_task_id)
-
+   
     # Retrieve the dataset IDs
     #process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
 
@@ -606,7 +609,7 @@ def step_eight(
 # notice that all pipeline component function calls are actually executed remotely
 # Only when a return value is used, the pipeline logic will wait for the component execution to complete
 @PipelineDecorator.pipeline(name="BrainScan2DataPipeline", project="BrainScan2", target_project="BrainScan2", pipeline_execution_queue="uts-strykers-queue", default_queue="uts-strykers-queue") #, version="0.0.6")
-def executing_data_pipeline(dataset_project, dataset_name, dataset_root, processed_dataset_root, output_root, queue_name):
+def executing_data_pipeline(dataset_project, dataset_name, dataset_root, processed_dataset_root, output_root, queue_name, results_dir):
 
     start_data_pipeline_id = start_data_pipeline(dataset_project, dataset_name, dataset_root)
 
@@ -630,10 +633,10 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, process
     start_model_pipeline_id = step_three_merge(process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, dataset_project, dataset_name)
     
     
-    step_four_id = step_four(start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root)
+    step_four_id, model_id = step_four(start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root, results_dir)
 
     
-    model_id, test_results_metrics = step_five(step_four_id, dataset_name, dataset_root)
+    model_id, test_results_metrics = step_five(step_four_id, model_id, dataset_name, dataset_root)
 
     
     step_six_id = step_six(model_id, queue_name)
@@ -664,7 +667,8 @@ if __name__ == "__main__":
         dataset_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor",
         processed_dataset_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/processed",
         output_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor/output",
-        queue_name="uts-strykers-queue"
+        queue_name="uts-strykers-queue", 
+        results_dir="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/models"
     )
 
     print("process completed")

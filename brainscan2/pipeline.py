@@ -456,18 +456,19 @@ def step_five(
     # Evaluate the model on the test dataset
     results = model.val(data='brainscan.yaml', imgsz=640)
 
-    task.get_logger().report_scalar("mAP@0.5", "Test", iteration=0, value=results.box.map50)
-    task.get_logger().report_scalar("mAP@0.5:0.95", "Test", iteration=0, value=results.box.map)
-    task.get_logger().report_scalar("Precision", "Test", iteration=0, value=results.box.precision)
-    task.get_logger().report_scalar("Recall", "Test", iteration=0, value=results.box.recall)
+    #task.get_logger().report_scalar("mAP@0.5", "Test", iteration=0, value=results.box.map50)
+    #task.get_logger().report_scalar("mAP@0.5:0.95", "Test", iteration=0, value=results.box.map)
+    #task.get_logger().report_scalar("Precision", "Test", iteration=0, value=results.box.precision)
+    #task.get_logger().report_scalar("Recall", "Test", iteration=0, value=results.box.recall)
 
 
     # Print evaluation metrics
-    print(f"Precision: {results.box.precision}")
-    print(f"Recall: {results.box.recall}")
-    print(f"mAP@0.5: {results.box.map50}")
-    print(f"mAP@0.5:0.95: {results.box.map}")
-    
+    #print(f"Precision: {results.box.precision}")
+    #print(f"Recall: {results.box.recall}")
+    #print(f"mAP@0.5: {results.box.map50}")
+    #print(f"mAP@0.5:0.95: {results.box.map}")
+    print(results)
+    task.get_logger().report_table("Test Results", "Test", iteration=0, table_plot=results.pandas().to_dict())
     return model.id, results
     
 
@@ -488,12 +489,12 @@ def step_six(
         objective_metric_sign='max',
         # Define the hyperparameters to optimize
         hyper_parameters=[
-            UniformParameterRange('epochs', min_value=50, max_value=150),
+            UniformParameterRange('epochs', min_value=25, max_value=50),
             UniformParameterRange('batch_size', min_value=8, max_value=32),
             UniformParameterRange('imgsz', min_value=320, max_value=640),
         ],
         # Define the optimization strategy
-        execution_queue='default',
+        execution_queue=queue_name,
         max_number_of_concurrent_tasks=2,
         # Define the time limit for the entire optimization process
         time_limit_per_job=None,
@@ -517,77 +518,6 @@ def step_six(
     print("Optimisation Done")
     return top_exp[0].id
 
-def testme(base_task_id, queue_name):
-
-    import argparse
-    import os
-
-    import numpy as np
-    from clearml import Dataset, Task
-
-
-    def job_complete_callback(
-        job_id,  # type: str
-        objective_value,  # type: float
-        objective_iteration,  # type: int
-        job_parameters,  # type: dict
-        top_performance_job_id,  # type: str
-        ):
-        
-        print(
-            "Job completed!", job_id, objective_value, objective_iteration, job_parameters
-        )
-        if job_id == top_performance_job_id:
-            print(
-                "Objective reached {}".format(
-                    objective_value
-                )
-            )
-
-    # Define Hyperparameter Space
-    param_ranges = [
-        UniformIntegerParameterRange(
-            "Args/epochs", min_value=5, max_value=10, step_size=5
-        ),
-        ### you could make anything like batch_size, number of nodes, loss function, a command line argument in base task and use it as a parameter to be optimised. ###
-    ]
-
-    # Setup HyperParameter Optimizer
-    optimizer = HyperParameterOptimizer(
-        base_task_id=base_task_id,
-        hyper_parameters=param_ranges,
-        objective_metric_title="epoch_accuracy",
-        objective_metric_series="epoch_accuracy",
-        objective_metric_sign="max",
-        optimizer_class=GridSearch,
-        execution_queue=queue_name,
-        max_number_of_concurrent_tasks=2,
-        optimization_time_limit=60.0,
-        # Check the experiments every 6 seconds is way too often, we should probably set it to 5 min,
-        # assuming a single experiment is usually hours...
-        pool_period_min=0.1,
-        compute_time_limit=120,
-        total_max_jobs=20,
-        min_iteration_per_job=15000,
-        max_iteration_per_job=150000,
-    )
-    # report every 12 seconds, this is way too often, but we are testing here J
-    optimizer.set_report_period(0.2)
-    # start the optimization process, callback function to be called every time an experiment is completed
-    # this function returns immediately
-    optimizer.start(job_complete_callback=job_complete_callback)
-    # set the time limit for the optimization process (2 hours)
-    optimizer.set_time_limit(in_minutes=90.0)
-    # wait until process is done (notice we are controlling the optimization process in the background)
-    optimizer.wait()
-    # optimization is completed, print the top performing experiments id
-    top_exp = optimizer.get_top_experiments(top_k=3)
-    print([t.id for t in top_exp])
-    # make sure background optimization stopped
-    optimizer.stop()
-
-    print("Optimisation Done")
-    return top_exp[0].id
 
 
 @PipelineDecorator.component(name="TestModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.testing)#, execution_queue="default")

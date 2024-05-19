@@ -468,7 +468,7 @@ def step_five(
     #print(f"mAP@0.5: {results.box.map50}")
     #print(f"mAP@0.5:0.95: {results.box.map}")
     print(results)
-    task.get_logger().report_table("Test Results", "Test", iteration=0, table_plot=results.pandas().to_dict())
+    #task.get_logger().report_table("Test Results", "Test", iteration=0, table_plot=results.pandas().to_dict())
     return model.id, results
     
 
@@ -510,13 +510,13 @@ def step_six(
     # Wait for the optimization to finish
     optimizer.wait()
 
-    top_exp = optimizer.get_top_experiments(top_k=3)
-    print([t.id for t in top_exp])
+    #top_exp = optimizer.get_top_experiments(top_k=3)
+    #print([t.id for t in top_exp])
     # make sure background optimization stopped
     optimizer.stop()
 
-    print("Optimisation Done")
-    return top_exp[0].id
+    #print("Optimisation Done")
+    return task.id  # top_exp[0].id
 
 
 

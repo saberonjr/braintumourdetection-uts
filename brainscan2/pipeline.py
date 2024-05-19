@@ -427,7 +427,7 @@ def step_five(
 ):
     import os
     from ultralytics import YOLO
-    from clearml import Task, Dataset
+    from clearml import Task, Dataset, Model
     import numpy as np
 
     # Connect to the previous task and fetch the dataset IDs
@@ -445,7 +445,9 @@ def step_five(
 
     # Load the trained model
     task = Task.get_task(task_id=train_model_task_id)
-    model_path = task.models['output_model'][0].get_local_copy()
+    #model_path = task.models['output_model'][0].get_local_copy()
+    model = Model(model_id=model_id)
+    model_path = model.get_local_copy()
 
     # Initialize the model
     model = YOLO(model_path)

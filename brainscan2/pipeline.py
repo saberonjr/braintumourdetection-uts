@@ -454,19 +454,21 @@ def step_five(
     model = YOLO(model_path)
 
     # Evaluate the model on the test dataset
-    test_results = model.val(data='brainscan.yaml', imgsz=640)
+    results = model.val(data='brainscan.yaml', imgsz=640)
 
-    task.get_logger().report_scalar("mAP@0.5", "Test", iteration=0, value=test_results.metrics['map50'])
-    task.get_logger().report_scalar("mAP@0.5:0.95", "Test", iteration=0, value=test_results.metrics['map'])
-    task.get_logger().report_scalar("Precision", "Test", iteration=0, value=test_results.metrics['precision'])
+    task.get_logger().report_scalar("mAP@0.5", "Test", iteration=0, value=results.box.map50)
+    task.get_logger().report_scalar("mAP@0.5:0.95", "Test", iteration=0, value=results.box.map)
+    task.get_logger().report_scalar("Precision", "Test", iteration=0, value=results.box.precision)
+    task.get_logger().report_scalar("Recall", "Test", iteration=0, value=results.box.recall)
+
 
     # Print evaluation metrics
-    print(f"Precision: {test_results.metrics['precision']}")
-    print(f"Recall: {test_results.metrics['recall']}")
-    print(f"mAP@0.5: {test_results.metrics['map50']}")
-    print(f"mAP@0.5:0.95: {test_results.metrics['map']}")
+    print(f"Precision: {results.box.precision}")
+    print(f"Recall: {results.box.recall}")
+    print(f"mAP@0.5: {results.box.map50}")
+    print(f"mAP@0.5:0.95: {results.box.map}")
     
-    return model.id, test_results.metrics
+    return model.id, results
     
 
 @PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=True, task_type=TaskTypes.optimizer)#, execution_queue="default")

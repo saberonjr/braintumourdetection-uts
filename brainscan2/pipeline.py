@@ -674,7 +674,7 @@ if __name__ == "__main__":
         #dataset_root="/root/braintumourdetection/brainscan2/datasets/brain-tumor",
         dataset_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor",
         processed_dataset_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/processed",
-        output_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/datasets/brain-tumor/output",
+        output_root="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/output",
         queue_name="uts-strykers-queue", 
         results_dir="/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/models"
     )

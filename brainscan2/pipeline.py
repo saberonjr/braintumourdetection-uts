@@ -423,7 +423,7 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
 
 @PipelineDecorator.component(name="EvaluateModel", return_values=["processed_train_dataset_id", "test_results_metrics"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def step_five(
-    train_model_task_id, model_id, processed_dataset_project, processed_dataset_name
+    train_model_task_id, model_id, processed_dataset_project, processed_dataset_name, results_dir
 ):
     import os
     from ultralytics import YOLO
@@ -453,8 +453,8 @@ def step_five(
     # Initialize the model
     model = YOLO(model_path)
 
-    # Evaluate the model on the test dataset
-    results = model.val(data='brainscan.yaml', imgsz=640)
+    # Evaluate the model on the test dataset 
+    results = model.val(data='brainscan.yaml', imgsz=256, project=results_dir, name='brain_tumor_model')
 
     #task.get_logger().report_scalar("mAP@0.5", "Test", iteration=0, value=results.box.map50)
     #task.get_logger().report_scalar("mAP@0.5:0.95", "Test", iteration=0, value=results.box.map)
@@ -469,20 +469,21 @@ def step_five(
     #print(f"mAP@0.5:0.95: {results.box.map}")
     print(results)
     #task.get_logger().report_table("Test Results", "Test", iteration=0, table_plot=results.pandas().to_dict())
-    return model.id, results
+    return train_model_task_id, results
     
 
 @PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=True, task_type=TaskTypes.optimizer)#, execution_queue="default")
 def step_six(
-    model_id, queue_name
+    train_model_task_id, queue_name
 ):
     from clearml import Task
     from clearml.automation import HyperParameterOptimizer, UniformParameterRange
+    from clearml.automation.optuna import OptimizerOptuna
 
     task = Task.current_task()
     # Create a HyperParameterOptimizer object
     optimizer = HyperParameterOptimizer(
-        base_task_id=task.id,
+        base_task_id=train_model_task_id,
         # Define the objective metric
         objective_metric_title='mAP@0.5:0.95',
         objective_metric_series='Test',
@@ -749,10 +750,10 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, process
     step_four_id, model_id = step_four(start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root, results_dir)
 
     
-    model_id, test_results_metrics = step_five(step_four_id, model_id, dataset_name, dataset_root)
+    step_five_id, test_results_metrics = step_five(step_four_id, model_id, dataset_name, dataset_root, results_dir)
 
     
-    step_six_id = step_six(model_id, queue_name)
+    step_six_id = step_six(step_five_id, queue_name)
 
 
     step_seven_id = step_seven(step_six_id,dataset_project, dataset_name)
@@ -768,7 +769,7 @@ if __name__ == "__main__":
     PipelineDecorator.set_default_execution_queue('uts-strykers-queue')
     # Run the pipeline steps as subprocesses on the current machine, great for local executions
     # (for easy development / debugging, use `PipelineDecorator.debug_pipeline()` to execute steps as regular functions)
-    PipelineDecorator.run_locally()
+    #PipelineDecorator.run_locally()
     #PipelineDecorator.debug_pipeline()
     # Start the pipeline execution logic.
     

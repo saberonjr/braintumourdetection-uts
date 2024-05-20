@@ -317,7 +317,7 @@ def step_three_merge(
 
 
 
-@PipelineDecorator.component(name="TrainModel", return_values=["training_task_id" , "model_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(name="TrainModel", return_values=["training_task_id", "model_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root, results_dir
 ):
     import argparse
@@ -327,30 +327,6 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     from clearml import Dataset, Task, OutputModel
     import cv2
 
-#def load_numpy_datasets(train_dataset_id, valid_dataset_id, test_dataset_id, processed_dataset_root):
-#    # Fetch datasets
-#    train_dataset = Dataset.get(dataset_id=train_dataset_id)
-#    valid_dataset = Dataset.get(dataset_id=valid_dataset_id)
-#    test_dataset = Dataset.get(dataset_id=test_dataset_id)
-#
-#    # Get the local paths for these datasets
-#    train_dataset_path = train_dataset.get_local_copy()
-#    valid_dataset_path = valid_dataset.get_local_copy()
-#    test_dataset_path = test_dataset.get_local_copy()
-#
-#    print(train_dataset_path, valid_dataset_path, test_dataset_path)
-#
-#    # Load the NumPy arrays
-#    train_images = np.load(os.path.join(train_dataset_path, "train_images.npy"))
-#    train_labels = np.load(os.path.join(train_dataset_path, "train_labels.npy"))
-#    valid_images = np.load(os.path.join(valid_dataset_path, "valid_images.npy"))
-#    valid_labels = np.load(os.path.join(valid_dataset_path, "valid_labels.npy"))
-#    test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
-#    test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
-#
-#    return train_images, train_labels, valid_images, valid_labels, test_images, test_labels
-#
-##Connect to the previous task and fetch the dataset IDs
     previous_task_id = start_model_pipeline_id
     previous_task = Task.get_task(task_id=previous_task_id)
     #
@@ -358,46 +334,12 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     process_train_dataset_id = previous_task.get_parameters()['General/process_train_dataset_id']
     process_valid_dataset_id = previous_task.get_parameters()['General/process_valid_dataset_id']
     process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
-#
-#print(f"Train Dataset ID: {process_train_dataset_id}")
-#print(f"Valid Dataset ID: {process_valid_dataset_id}")
-#print(f"Test Dataset ID: {process_test_dataset_id}")
-#
-## Load datasets
-#train_images, train_labels, valid_images, valid_labels, test_images, test_labels = load_numpy_datasets(
-#    process_train_dataset_id, process_valid_dataset_id, process_test_dataset_id, processed_dataset_root)
-#
-#os.makedirs(f'{processed_dataset_root}/train/images', exist_ok=True)
-#os.makedirs(f'{processed_dataset_root}/train/labels', exist_ok=True)
-#os.makedirs(f'{processed_dataset_root}/valid/images', exist_ok=True)
-#os.makedirs(f'{processed_dataset_root}/valid/labels', exist_ok=True)
-#os.makedirs(f'{processed_dataset_root}/test/images', exist_ok=True)
-#os.makedirs(f'{processed_dataset_root}/test/labels', exist_ok=True)
-#
-#for i, (img, lbl) in enumerate(zip(train_images, train_labels)):
-#    cv2.imwrite(f'{processed_dataset_root}/train/images/{i}.jpg', img)
-#    np.savetxt(f'{processed_dataset_root}/train/labels/{i}.txt', lbl, fmt='%f')
-#
-#for i, (img, lbl) in enumerate(zip(valid_images, valid_labels)):
-#    cv2.imwrite(f'{processed_dataset_root}/valid/images/{i}.jpg', img)
-#    np.savetxt(f'{processed_dataset_root}/valid/labels/{i}.txt', lbl, fmt='%f')
-#
-#for i, (img, lbl) in enumerate(zip(test_images, test_labels)):
-#    cv2.imwrite(f'{processed_dataset_root}/test/images/{i}.jpg', img)
-#    np.savetxt(f'{processed_dataset_root}/test/labels/{i}.txt', lbl, fmt='%f')
-#
+
     # Load a model
     model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
-
-    # Train the model
-    #results = model.train(data='brainscan.yaml', epochs=10, imgsz=640)
-
-    # Define the output directory for training results
-    #results_dir = '/Users/soterojrsaberon/UTS/braintumourdetection/brainscan2/models'
-
     task = Task.current_task()
     # Train the model
-    results = model.train(data='brainscan.yaml', epochs=3, imgsz=640, project=results_dir, name='brain_tumor_model')
+    results = model.train(data='brainscan.yaml', epochs=3, imgsz=256, project=results_dir, name='brain_tumor_model')
 
     # Save the trained model weights
     model_output_path = os.path.join(results_dir, 'brain_tumor_model', 'weights', 'best.pt')
@@ -430,22 +372,8 @@ def step_five(
     from clearml import Task, Dataset, Model
     import numpy as np
 
-    # Connect to the previous task and fetch the dataset IDs
-   
-    # Retrieve the dataset IDs
-    #process_test_dataset_id = previous_task.get_parameters()['General/process_test_dataset_id']
-
-    # Load the test dataset
-    #test_dataset = Dataset.get(dataset_id=process_test_dataset_id)
-    #test_dataset_path = test_dataset.get_local_copy()
-
-    # Load the test images and labels
-    #test_images = np.load(os.path.join(test_dataset_path, "test_images.npy"))
-    #test_labels = np.load(os.path.join(test_dataset_path, "test_labels.npy"))
-
     # Load the trained model
     task = Task.get_task(task_id=train_model_task_id)
-    #model_path = task.models['output_model'][0].get_local_copy()
     model_saved = Model(model_id=model_id)
     model_path = model_saved.get_local_copy()
     print(model_path)
@@ -456,23 +384,12 @@ def step_five(
     # Evaluate the model on the test dataset 
     results = model.val(data='brainscan.yaml', imgsz=256, project=results_dir, name='brain_tumor_model')
 
-    #task.get_logger().report_scalar("mAP@0.5", "Test", iteration=0, value=results.box.map50)
-    #task.get_logger().report_scalar("mAP@0.5:0.95", "Test", iteration=0, value=results.box.map)
-    #task.get_logger().report_scalar("Precision", "Test", iteration=0, value=results.box.precision)
-    #task.get_logger().report_scalar("Recall", "Test", iteration=0, value=results.box.recall)
-
-
-    # Print evaluation metrics
-    #print(f"Precision: {results.box.precision}")
-    #print(f"Recall: {results.box.recall}")
-    #print(f"mAP@0.5: {results.box.map50}")
-    #print(f"mAP@0.5:0.95: {results.box.map}")
     print(results)
     #task.get_logger().report_table("Test Results", "Test", iteration=0, table_plot=results.pandas().to_dict())
     return train_model_task_id, results
     
 
-@PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=True, task_type=TaskTypes.optimizer)#, execution_queue="default")
+@PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=False, task_type=TaskTypes.optimizer)#, execution_queue="default")
 def step_six(
     train_model_task_id, queue_name
 ):
@@ -521,7 +438,7 @@ def step_six(
 
 
 
-@PipelineDecorator.component(name="TestModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.testing)#, execution_queue="default")
+@PipelineDecorator.component(name="TestModel", return_values=["processed_train_dataset_id"], cache=False, task_type=TaskTypes.testing)#, execution_queue="default")
 def step_seven(
     train_model_id, processed_dataset_project, processed_dataset_name
 ):
@@ -769,7 +686,7 @@ if __name__ == "__main__":
     PipelineDecorator.set_default_execution_queue('uts-strykers-queue')
     # Run the pipeline steps as subprocesses on the current machine, great for local executions
     # (for easy development / debugging, use `PipelineDecorator.debug_pipeline()` to execute steps as regular functions)
-    #PipelineDecorator.run_locally()
+    PipelineDecorator.run_locally()
     #PipelineDecorator.debug_pipeline()
     # Start the pipeline execution logic.
     

@@ -339,7 +339,7 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
     task = Task.current_task()
     # Train the model
-    results = model.train(data='brainscan.yaml', epochs=3, imgsz=256, project=results_dir, name='brain_tumor_model')
+    results = model.train(data='brainscan.yaml', epochs=50, imgsz=256, project=results_dir, name='brain_tumor_model')
 
     # Save the trained model weights
     model_output_path = os.path.join(results_dir, 'brain_tumor_model', 'weights', 'best.pt')

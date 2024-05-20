@@ -106,30 +106,29 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Gitarth Vaishnav - [@GitarthVaishnav](https://linkedin.com/in/gitarthvaishnav)
+Email: sotero.j.saberon@student.uts.edu.au
+Email: leonambrose.lusbo@student.uts.edu.au
+Email: norah.albaqami@student.uts.edu.au
 
-Email: Gitarthv@outlook.com | Gitarth.Vaishnav@uts.edu.au
+Github Link: [@GitarthVaishnav](https://github.com/uts-strykers/)
 
-
-Github Link: [@GitarthVaishnav](https://github.com/GitarthVaishnav/)
-
-Project Link: [https://github.com/GitarthVaishnav/First_MLOPS_Pipeline](https://github.com/GitarthVaishnav/First_MLOPS_Pipeline)
+Project Link: [https://github.com/uts-strykers/braintumourdetection](https://github.com/uts-strykers/braintumourdetection)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/GitarthVaishnav/First_MLOPS_Pipeline.svg?style=for-the-badge
-[contributors-url]: https://github.com/GitarthVaishnav/First_MLOPS_Pipeline/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/GitarthVaishnav/First_MLOPS_Pipeline.svg?style=for-the-badge
-[forks-url]: https://github.com/GitarthVaishnav/First_MLOPS_Pipeline/network/members
-[stars-shield]: https://img.shields.io/github/stars/GitarthVaishnav/First_MLOPS_Pipeline.svg?style=for-the-badge
-[stars-url]: https://github.com/GitarthVaishnav/First_MLOPS_Pipeline/stargazers
-[issues-shield]: https://img.shields.io/github/issues/GitarthVaishnav/First_MLOPS_Pipeline.svg?style=for-the-badge
-[issues-url]: https://github.com/GitarthVaishnav/First_MLOPS_Pipeline/issues
-[license-shield]: https://img.shields.io/github/license/GitarthVaishnav/First_MLOPS_Pipeline.svg?style=for-the-badge
-[license-url]: https://github.com/GitarthVaishnav/First_MLOPS_Pipeline/blob/master/LICENCE
+[contributors-shield]: https://img.shields.io/github/contributors/uts-strykers/braintumourdetection.svg?style=for-the-badge
+[contributors-url]: https://github.com/uts-strykers/braintumourdetection/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/uts-strykers/braintumourdetection.svg?style=for-the-badge
+[forks-url]: https://github.com/uts-strykers/braintumourdetection/network/members
+[stars-shield]: https://img.shields.io/github/stars/uts-strykers/braintumourdetection.svg?style=for-the-badge
+[stars-url]: https://github.com/uts-strykers/braintumourdetection/stargazers
+[issues-shield]: https://img.shields.io/github/issues/uts-strykers/braintumourdetection.svg?style=for-the-badge
+[issues-url]: https://github.com/uts-strykers/braintumourdetection/issues
+[license-shield]: https://img.shields.io/github/license/uts-strykers/braintumourdetection.svg?style=for-the-badge
+[license-url]: https://github.com/uts-strykers/braintumourdetection/blob/master/LICENCE
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/gitarthvaishnav
 [Python.org]:https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54

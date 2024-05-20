@@ -373,7 +373,7 @@ def step_five(
     import numpy as np
 
     # Load the trained model
-    task = Task.get_task(task_id=train_model_task_id)
+    #task = Task.get_task(task_id=train_model_task_id)
     model_saved = Model(model_id=model_id)
     model_path = model_saved.get_local_copy()
     print(model_path)
@@ -386,7 +386,7 @@ def step_five(
 
     print(results)
     #task.get_logger().report_table("Test Results", "Test", iteration=0, table_plot=results.pandas().to_dict())
-    return train_model_task_id, 
+    return train_model_task_id
     
 
 @PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=False, task_type=TaskTypes.optimizer)#, execution_queue="default")
@@ -399,42 +399,50 @@ def step_six(
 
     task = Task.current_task()
     # Create a HyperParameterOptimizer object
+    # Define Hyperparameter Space
+    param_ranges = [
+        UniformIntegerParameterRange(
+            "Args/epochs", min_value=10, max_value=20, step_size=5
+        ),
+        ### you could make anything like batch_size, number of nodes, loss function, a command line argument in base task and use it as a parameter to be optimised. ###
+    ]
     optimizer = HyperParameterOptimizer(
-        base_task_id=task.id,
-        # Define the objective metric
-        objective_metric_title='mAP@0.5:0.95',
-        objective_metric_series='Test',
-        objective_metric_sign='max',
-        # Define the hyperparameters to optimize
-        hyper_parameters=[
-            UniformParameterRange('epochs', min_value=25, max_value=50),
-            UniformParameterRange('batch_size', min_value=8, max_value=32),
-            UniformParameterRange('imgsz', min_value=320, max_value=640),
-        ],
-        # Define the optimization strategy
+        base_task_id=train_model_task_id,
+        hyper_parameters=param_ranges,
+        objective_metric_title="epoch_accuracy",
+        objective_metric_series="epoch_accuracy",
+        objective_metric_sign="max",
+        optimizer_class=GridSearch,
         execution_queue=queue_name,
         max_number_of_concurrent_tasks=2,
-        # Define the time limit for the entire optimization process
-        time_limit_per_job=None,
-        # Define the number of optimization iterations
+        optimization_time_limit=60.0,
+        # Check the experiments every 6 seconds is way too often, we should probably set it to 5 min,
+        # assuming a single experiment is usually hours...
+        pool_period_min=0.1,
+        compute_time_limit=120,
         total_max_jobs=20,
-        # Define the number of iterations without improvement after which the optimization will stop
-        min_iteration_per_job=10,
+        min_iteration_per_job=15,
+        max_iteration_per_job=20,
     )
 
+    optimizer.set_report_period(0.2)
+
+    optimizer.set_time_limit(in_minutes=90.0)
     # Start the optimization process
     optimizer.start()
 
     # Wait for the optimization to finish
     optimizer.wait()
 
-    #top_exp = optimizer.get_top_experiments(top_k=3)
-    #print([t.id for t in top_exp])
+    # optimization is completed, print the top performing experiments id
+    top_exp = optimizer.get_top_experiments(top_k=3)
+    print([t.id for t in top_exp])
     # make sure background optimization stopped
     optimizer.stop()
 
+
     #print("Optimisation Done")
-    return task.id  # top_exp[0].id
+    return top_exp[0].id
 
 
 
@@ -654,7 +662,7 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, process
     step_four_id, model_id = step_four(start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root, results_dir)
 
     
-    step_five_id, test_results_metrics = step_five(step_four_id, model_id, dataset_name, dataset_root, results_dir)
+    step_five_id = step_five(step_four_id, model_id, dataset_name, dataset_root, results_dir)
 
     step_six_id = step_six(step_five_id, queue_name)
 

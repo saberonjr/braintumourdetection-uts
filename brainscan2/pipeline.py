@@ -317,7 +317,7 @@ def step_three_merge(
 
 
 
-@PipelineDecorator.component(name="TrainModel", return_values=["training_task_id", "model_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(name="TrainModel", return_values=["training_task_id", "model_id"], cache=False, task_type=TaskTypes.training)#, execution_queue="default")
 def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_dataset_root, results_dir
 ):
     import argparse
@@ -363,7 +363,7 @@ def step_four( start_model_pipeline_id, dataset_name, dataset_root, processed_da
     return task.id, model_id
 
 
-@PipelineDecorator.component(name="EvaluateModel", return_values=["processed_train_dataset_id", "test_results_metrics"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
+@PipelineDecorator.component(name="EvaluateModel", return_values=["train_model_task_id"], cache=True, task_type=TaskTypes.training)#, execution_queue="default")
 def step_five(
     train_model_task_id, model_id, processed_dataset_project, processed_dataset_name, results_dir
 ):
@@ -386,7 +386,7 @@ def step_five(
 
     print(results)
     #task.get_logger().report_table("Test Results", "Test", iteration=0, table_plot=results.pandas().to_dict())
-    return train_model_task_id, results
+    return train_model_task_id, 
     
 
 @PipelineDecorator.component(name="HPO", return_values=["top_experiment_id"], cache=False, task_type=TaskTypes.optimizer)#, execution_queue="default")
@@ -400,7 +400,7 @@ def step_six(
     task = Task.current_task()
     # Create a HyperParameterOptimizer object
     optimizer = HyperParameterOptimizer(
-        base_task_id=train_model_task_id,
+        base_task_id=task.id,
         # Define the objective metric
         objective_metric_title='mAP@0.5:0.95',
         objective_metric_series='Test',
@@ -438,21 +438,8 @@ def step_six(
 
 
 
-@PipelineDecorator.component(name="TestModel", return_values=["processed_train_dataset_id"], cache=False, task_type=TaskTypes.testing)#, execution_queue="default")
-def step_seven(
-    train_model_id, processed_dataset_project, processed_dataset_name
-):
-    import argparse
-    import os
-
-    import numpy as np
-    from clearml import Dataset, Task
-
-    return "test_model_id"
-
-
 @PipelineDecorator.component(name="PushModel", return_values=["processed_train_dataset_id"], cache=True, task_type=TaskTypes.service)#, execution_queue="default")
-def step_eight(
+def step_seven (
     train_model_id, processed_dataset_project, processed_dataset_name
 ):
     import argparse
@@ -669,14 +656,11 @@ def executing_data_pipeline(dataset_project, dataset_name, dataset_root, process
     
     step_five_id, test_results_metrics = step_five(step_four_id, model_id, dataset_name, dataset_root, results_dir)
 
-    
     step_six_id = step_six(step_five_id, queue_name)
 
+    #step_seven_id = step_seven(step_six_id,dataset_project, dataset_name)
 
-    step_seven_id = step_seven(step_six_id,dataset_project, dataset_name)
-
-    
-    step_eight_id = step_eight(step_seven_id,dataset_project, dataset_name)
+    #step_eight_id = step_eight(step_seven_id,dataset_project, dataset_name)
 
 
 

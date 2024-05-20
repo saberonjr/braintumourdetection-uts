@@ -71,10 +71,10 @@ This task involves using the YoloV8 model for object detection on the "BrainTumo
 
 
 ### Option 1: Remotely Execute Steps:
-Follow the instructions in this document to run steps remotely: [Remote Execution](https://github.com/GitarthVaishnav/First_Pipeline/blob/master/docs/RemoteExecution.md)
+Follow the instructions in this document to run steps remotely: [Remote Execution](https://github.com/uts-strykers/braintumourdetection/blob/master/docs/RemoteExecution.md)
 
 ### Option 2: Locally Execute Steps [NOT RECOMMENDED]:
-Follow the instructions in this document to run steps locally: [Local Execution](https://github.com/GitarthVaishnav/First_Pipeline/blob/master/docs/LocalExecution.md)
+Follow the instructions in this document to run steps locally: [Local Execution](https://github.com/uts-strykers/braintumourdetection/blob/master/docs/LocalExecution.md)
 
 
 <!-- USAGE -->
@@ -106,11 +106,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Email: sotero.j.saberon@student.uts.edu.au
-Email: leonambrose.lusbo@student.uts.edu.au
-Email: norah.albaqami@student.uts.edu.au
+Email: sotero.j.saberon@student.uts.edu.au, leonambrose.lusbo@student.uts.edu.au, norah.albaqami@student.uts.edu.au
 
-Github Link: [@GitarthVaishnav](https://github.com/uts-strykers/)
+Github Link: [@uts-strykers](https://github.com/uts-strykers/)
 
 Project Link: [https://github.com/uts-strykers/braintumourdetection](https://github.com/uts-strykers/braintumourdetection)
 
